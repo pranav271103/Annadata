@@ -1,0 +1,53 @@
+{
+  "weather_linear_regression_v1": {
+    "type": "linear_regression",
+    "dataset": "weather",
+    "path": "src/models/saved_models/weather_models/linear_regression_weather.pkl",
+    "metrics": {
+      "train_mse": 33.84710097028077,
+      "test_mse": 38.20089907788274,
+      "train_r2": 0.09145367288863049,
+      "test_r2": 0.08054051741605195,
+      "train_mae": 4.642068325611227,
+      "test_mae": 4.927066931551126,
+      "cv_mse": 34.71026615225659,
+      "cv_std": 0.6690725644835274
+    },
+    "created_at": "2025-11-12T23:50:32.278504",
+    "status": "active"
+  },
+  "weather_random_forest_v1": {
+    "type": "random_forest",
+    "dataset": "weather",
+    "path": "src/models/saved_models/weather_models/random_forest_weather.pkl",
+    "metrics": {
+      "train_mse": 19.372454714893543,
+      "test_mse": 38.347613148511776,
+      "train_r2": 0.47999172532376977,
+      "test_r2": 0.07700924860498726,
+      "train_mae": 3.553975299468337,
+      "test_mae": 4.939732172273148,
+      "cv_mse": 35.28137979988472,
+      "cv_std": 0.5182748070599953
+    },
+    "created_at": "2025-11-12T23:50:32.281419",
+    "status": "active"
+  },
+  "weather_svr_v1": {
+    "type": "svr",
+    "dataset": "weather",
+    "path": "src/models/saved_models/weather_models/svr_weather.pkl",
+    "metrics": {
+      "train_mse": 33.45983600175503,
+      "test_mse": 38.49422876651388,
+      "train_r2": 0.10184889595609203,
+      "test_r2": 0.07348034945546467,
+      "train_mae": 4.56769210877748,
+      "test_mae": 4.97949520357661,
+      "cv_mse": 34.9736223665426,
+      "cv_std": 0.7703009429285688
+    },
+    "created_at": "2025-11-12T23:50:32.281419",
+    "status": "active"
+  }
+}
