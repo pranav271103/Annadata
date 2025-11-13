@@ -49,5 +49,56 @@
     },
     "created_at": "2025-11-12T23:50:32.281419",
     "status": "active"
+  },
+  "crop_linear_regression_v1": {
+    "type": "linear_regression",
+    "dataset": "crop",
+    "path": "src/models/saved_models/crop_models/linear_regression_crop.pkl",
+    "metrics": {
+      "train_mse": 2.2837997851231558e-24,
+      "test_mse": 2.306316395859262e-24,
+      "train_r2": 1.0,
+      "test_r2": 1.0,
+      "train_mae": 5.679284117018919e-13,
+      "test_mae": 5.752205794823849e-13,
+      "cv_mse": 2.969044447187302e-24,
+      "cv_std": 2.3952913037649385e-24
+    },
+    "created_at": "2025-11-13T22:46:57.301165",
+    "status": "active"
+  },
+  "crop_random_forest_v1": {
+    "type": "random_forest",
+    "dataset": "crop",
+    "path": "src/models/saved_models/crop_models/random_forest_crop.pkl",
+    "metrics": {
+      "train_mse": 298.79772189924864,
+      "test_mse": 1302.6240219800093,
+      "train_r2": 0.9996088613323466,
+      "test_r2": 0.9983742396265701,
+      "train_mae": 0.4498780978529115,
+      "test_mae": 1.4170380020799982,
+      "cv_mse": 2896.7943558273682,
+      "cv_std": 5253.676542291533
+    },
+    "created_at": "2025-11-13T22:46:57.306163",
+    "status": "active"
+  },
+  "crop_svr_v1": {
+    "type": "svr",
+    "dataset": "crop",
+    "path": "src/models/saved_models/crop_models/svr_crop.pkl",
+    "metrics": {
+      "train_mse": 483401.28775647865,
+      "test_mse": 569716.7487281187,
+      "train_r2": 0.36720757295888595,
+      "test_r2": 0.28895606212328473,
+      "train_mae": 59.109177384242685,
+      "test_mae": 61.27578225434051,
+      "cv_mse": 543142.4612092341,
+      "cv_std": 99995.79753101576
+    },
+    "created_at": "2025-11-13T22:46:57.307164",
+    "status": "active"
   }
 }
