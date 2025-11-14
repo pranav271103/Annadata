@@ -67,3 +67,4 @@ htmlcov/
 # Keep all data files in data/interim/ directory
 !**/data/interim/**/*
 !**/data/interim/
+.DS_Store
