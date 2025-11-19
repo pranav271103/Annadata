@@ -27,6 +27,7 @@ wheels/
 
 # Virtual Environment
 venv/
+venv_quantum/
 env/
 ENV/
 
