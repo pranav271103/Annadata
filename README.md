@@ -246,7 +246,7 @@ Track our progress toward quantum advantage:
 | **Pranav Singh** | Quantum/AI Developer | [pranav271103](https://github.com/pranav271103) |
 | **Raman Mendiratta** | ML/Data Science Lead | [R-Meister](https://github.com/R-Meister) |
 | **Kritika Yadav** | Data Pipeline Lead | [kritika62](https://github.com/kritika62) |
-| **Kshitij Verma** | Full-Stack Developer | [kshitij-username] |
+| **Kshitij Verma** | Full-Stack Developer | [Capatlist](https://github.com/Capatlist) |
 
 ## Contributing
 
