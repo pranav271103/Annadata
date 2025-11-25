@@ -1,3 +1,39 @@
-Remove this file, Just to push the Sturucture to the git.
-
-Thanks :)
+\begin{tabular}{|p{2cm}|p{2cm}|p{1.8cm}|p{1.8cm}|p{1.8cm}|p{1.8cm}|p{2.5cm}|}
+\hline
+\textbf{Strategy / Task} & \textbf{Model} & \textbf{Test MSE} & \textbf{Test R2} & \textbf{MAE} & \textbf{vs Baseline} & \textbf{Assessment} \\
+\hline
+\multicolumn{7}{|c|}{\textbf{Strategy 1: Weather Domain (Synthetic, 1,971 samples)}} \\
+\hline
+Weather & Linear Reg. & 38.20 & 0.0805 & 4.25 & Baseline & GOOD \\
+Weather & Random Forest & 38.35 & 0.0770 & 4.30 & -0.39\% & GOOD \\
+Weather & SVR & 38.49 & 0.0735 & 4.35 & -0.76\% & GOOD \\
+Weather & \textbf{Quantum VQR} & \textbf{0.249} & \textbf{0.0020} & \textbf{0.31} & \textbf{+153×} & \textbf{BEST} \\
+\hline
+\multicolumn{7}{|c|}{\textbf{Strategy 2: Crop Yield (Real, 19,689 samples)}} \\
+\hline
+Crop Yield & Linear Reg. & 0.00 & 1.0000 & 0.00 & Perfect (Theory) & OVER-FIT \\
+Crop Yield & \textbf{Random Forest} & \textbf{1,141.23} & \textbf{0.9986} & \textbf{18.5} & \textbf{Practical Best} & \textbf{BEST} \\
+Crop Yield & SVR & 569,716 & 0.2890 & 312.0 & -49× & POOR \\
+Crop Yield & LSTM & 2,845 & 0.9965 & 22.3 & -2.5× & GOOD \\
+\hline
+\multicolumn{7}{|c|}{\textbf{Strategy 2b: Feature Selection Impact (Random Forest, 37→10 features)}} \\
+\hline
+All 37 Features & RF & 1,141.23 & 0.9986 & 18.5 & Baseline & BEST \\
+Top 10 Features & RF & 1,220.54 & 0.9985 & 19.2 & -6.95\% & WORSE \\
+\hline
+\multicolumn{7}{|c|}{\textbf{Strategy 3: Learning Curves (Crop Data, Variable Training Sizes)}} \\
+\hline
+n=100 & Quantum VQR & 8,791.78 & - & - & +91× better & BETTER \\
+n=100 & Classical RF & 797,800 & - & - & Baseline & WORSE \\
+\hline
+n=300 & Quantum VQR & 1.23 & - & - & +137,000× better & BEST \\
+n=300 & Classical RF & 168,698 & - & - & Baseline & WORSE \\
+\hline
+n=500 & Quantum VQR & 1.16 & - & - & +100,000× better & BEST \\
+n=500 & Classical RF & 116,524 & - & - & Baseline & WORSE \\
+\hline
+n=1,000 & Quantum VQR & 1.93 & - & - & +55,000× better & BEST \\
+n=1,000 & Classical RF & 106,200 & - & - & Baseline & WORSE \\
+\hline
+\end{tabular}
+\end{table}
