@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@next/swc-darwin-arm64": "^16.0.4",
     "@types/three": "^0.181.0",
     "3dmol": "^2.5.3",
     "molstar": "^5.4.1",

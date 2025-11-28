@@ -9,12 +9,13 @@
   }
   
   :root {
-    --color-brand-primary: #6366f1;
-    --color-brand-secondary: #8b5cf6;
-    --color-success: #10b981;
+    /* UX4G / Indian agriculture inspired palette */
+    --color-brand-primary: #0b7a3b;   /* rich green */
+    --color-brand-secondary: #ef7c22; /* saffron accent */
+    --color-success: #15803d;
     --color-warning: #f59e0b;
-    --color-error: #ef4444;
-    --color-info: #3b82f6;
+    --color-error: #b91c1c;
+    --color-info: #2563eb;
     
     --color-white: #ffffff;
     --color-gray-50: #f9fafb;
@@ -59,20 +60,278 @@
   }
   
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #f3f4f6;
+    color: var(--color-gray-900);
+  }
+
+  .ux4g-body {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(11, 122, 59, 0.16), transparent 60%),
+      radial-gradient(circle at 100% 100%, rgba(239, 124, 34, 0.14), transparent 55%),
+      linear-gradient(to bottom, #f9fafb 0%, #e5e7eb 100%);
+    min-height: 100vh;
+  }
+
+  /* === UX4G SHELL === */
+  .ux4g-top-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 4vw;
+    background: #0f172a;
+    color: #e5e7eb;
+    font-size: 0.75rem;
+  }
+
+  .ux4g-top-strip-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ux4g-top-strip-flag {
+    width: 40px;
+    height: 10px;
+    border-radius: 999px;
+    background-image: linear-gradient(
+      to right,
+      #ff9933 0%,
+      #ff9933 33%,
+      #ffffff 33%,
+      #ffffff 66%,
+      #138808 66%,
+      #138808 100%
+    );
+    box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.5);
+  }
+
+  .ux4g-top-strip-text {
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #e5e7eb;
+  }
+
+  .ux4g-top-strip-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .ux4g-a11y-btn {
+    border-radius: 999px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e5e7eb;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .ux4g-a11y-btn:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+  }
+
+  .ux4g-a11y-contrast {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #0f172a;
+  }
+
+  .ux4g-shell {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 4vw 3rem;
+  }
+
+  .ux4g-header {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    border-bottom: 3px solid rgba(11, 122, 59, 0.12);
+  }
+
+  .ux4g-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .ux4g-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .ux4g-logo-wrapper {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 2px solid rgba(11, 122, 59, 0.2);
+    background: #f9fafb;
+  }
+
+  .ux4g-logo-image {
+    object-fit: contain;
+  }
+
+  .ux4g-brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .ux4g-brand-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: #0f172a;
+  }
+
+  .ux4g-brand-subtitle {
+    font-size: 0.8rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+
+  .ux4g-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .ux4g-nav-link {
+    position: relative;
+    padding: 0.45rem 0.75rem;
+    color: #334155;
+    text-decoration: none;
+    border-radius: 999px;
+    transition: color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .ux4g-nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0.85rem;
+    right: 0.85rem;
+    bottom: 0.25rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff9933, #ffffff, #138808);
+    opacity: 0;
+    transform: scaleX(0.6);
+    transform-origin: center;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .ux4g-nav-link:hover {
+    background: rgba(11, 122, 59, 0.06);
+    color: #14532d;
+    transform: translateY(-1px);
+  }
+
+  .ux4g-nav-link-active {
+    background: rgba(11, 122, 59, 0.12);
+    color: #14532d;
+    font-weight: 600;
+  }
+
+  .ux4g-nav-link-active::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .ux4g-main {
+    margin-top: 1.5rem;
+  }
+
+  .ux4g-footer {
+    margin-top: 2rem;
+    background: #0f172a;
+    border-radius: var(--radius-2xl);
+    padding: 1.5rem 1.75rem;
+    color: #e5e7eb;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.5);
+  }
+
+  .ux4g-footer-inner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .ux4g-footer-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .ux4g-footer-text {
+    font-size: 0.8rem;
+    color: #cbd5f5;
+    max-width: 26rem;
+  }
+
+  .ux4g-footer-right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    align-items: flex-end;
+  }
+
+  .ux4g-footer-links {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .ux4g-footer-link {
+    color: #e5e7eb;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 1px;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .ux4g-footer-link:hover {
+    color: #fef9c3;
+    border-color: #fef9c3;
+  }
+
+  .ux4g-footer-meta {
+    font-size: 0.7rem;
+    color: #94a3b8;
   }
   
   .protein-engineering-app {
     min-height: 100vh;
-    background: linear-gradient(to bottom, #f9fafb 0%, #e5e7eb 100%);
+    background: radial-gradient(circle at 15% 20%, rgba(11, 122, 59, 0.12), transparent 55%),
+                radial-gradient(circle at 85% 80%, rgba(239, 124, 34, 0.12), transparent 55%),
+                linear-gradient(to bottom, #f9fafb 0%, #e5e7eb 100%);
   }
   
   /* HERO */
   .app-hero {
     position: relative;
-    background: var(--gradient-hero);
+    background: linear-gradient(135deg, #0b7a3b 0%, #15803d 40%, #166534 65%, #0f172a 100%);
     padding: var(--space-12) var(--space-6);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
@@ -124,7 +383,7 @@
   }
   
   .hero-title {
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
     font-weight: 800;
     color: white;
     margin: 0 0 var(--space-4) 0;
@@ -133,9 +392,9 @@
   }
   
   .hero-description {
-    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-size: clamp(1rem, 2vw, 1.15rem);
     color: rgba(255, 255, 255, 0.95);
-    max-width: 700px;
+    max-width: 760px;
     margin: 0 auto;
     line-height: 1.6;
   }
