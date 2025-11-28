@@ -1,359 +1,147 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import ProteinEngineering from '@/components/ProteinEngineering';
-import RecommendationPanel from '@/components/RecommendationPanel';
+import HomeView from '@/components/HomeView';
+import ProteinEngineeringView from '@/components/ProteinEngineeringView';
+import ResourcesView from '@/components/ResourcesView';
 
-interface TraitConfig {
-  crop: string;
-  region: string;
-  season: string;
-  drought_tolerance: number;
-  heat_resistance: number;
-  disease_resistance: number;
-  salinity_resistance: number;
-  photosynthesis_efficiency: number;
-  nitrogen_efficiency: number;
-  [key: string]: string | number;
-}
-
-interface RecommendedProtein {
-  trait: string;
-  intensity: number;
-  proteins: string[];
-  pdb_ids: string[];
-  genes: string[];
-  mechanism: string;
-  yield_contribution: number;
-}
-
-interface ProteinResult {
-  crop: string;
-  region: string;
-  baseline_yield: number;
-  projected_yield: number;
-  yield_increase_percent: number;
-  selected_traits: Record<string, number>;
-  recommended_proteins: RecommendedProtein[];
-  climate_resilience_score: number;
-  feasibility_score: number;
-  recommendations: string[];
-}
-
-const ProteinVisualization = dynamic(
-  () => import('@/components/ProteinVisualization'),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="viz-loading-container">
-        <div className="viz-loading-spinner"></div>
-        <p className="viz-loading-text">Loading 3D Viewer...</p>
-      </div>
-    )
-  }
-);
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-export default function ProteinEngineeringPage() {
+export default function Page() {
   const [isClient, setIsClient] = useState(false);
-  const [config, setConfig] = useState<TraitConfig>({
-    crop: 'Wheat',
-    region: 'Punjab',
-    season: 'Rabi',
-    drought_tolerance: 0,
-    heat_resistance: 0,
-    disease_resistance: 0,
-    salinity_resistance: 0,
-    photosynthesis_efficiency: 0,
-    nitrogen_efficiency: 0,
-  });
-
-  const [result, setResult] = useState<ProteinResult | null>(null);
-  const [selectedProtein, setSelectedProtein] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'visualization' | 'recommendations'>('visualization');
+  const [activeTab, setActiveTab] = useState<'home' | 'engineering' | 'resources'>('home');
+  const [fontSize, setFontSize] = useState(100);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    document.documentElement.style.fontSize = `${fontSize}%`;
+  }, [fontSize]);
 
-  const handleTraitChange = (trait: string, value: number) => {
-    setConfig(prev => ({ ...prev, [trait]: value }));
-  };
-
-  const handleCropChange = (crop: string) => {
-    setConfig(prev => ({ ...prev, crop }));
-  };
-
-  const handleRegionChange = (region: string) => {
-    setConfig(prev => ({ ...prev, region }));
-  };
-
-  const handleSeasonChange = (season: string) => {
-    setConfig(prev => ({ ...prev, season }));
-  };
-
-  const handleEngineer = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_BASE}/engineer-trait`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(config),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to engineer proteins');
-      }
-
-      const data = await response.json();
-      setResult(data);
-
-      if (data.recommended_proteins?.[0]?.pdb_ids?.[0]) {
-        setSelectedProtein(data.recommended_proteins[0].pdb_ids[0]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
+  const handleSkipToContent = () => {
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // If not on home tab, switch to home and then scroll
+      setActiveTab('home');
+      setTimeout(() => {
+        const content = document.getElementById('main-content');
+        content?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
   };
 
-  const handleReset = () => {
-    setConfig({
-      crop: 'Wheat',
-      region: 'Punjab',
-      season: 'Rabi',
-      drought_tolerance: 0,
-      heat_resistance: 0,
-      disease_resistance: 0,
-      salinity_resistance: 0,
-      photosynthesis_efficiency: 0,
-      nitrogen_efficiency: 0,
-    });
-    setResult(null);
-    setSelectedProtein(null);
-    setError(null);
+  const handleFontSizeChange = (action: 'increase' | 'decrease' | 'reset') => {
+    if (action === 'increase') setFontSize(prev => Math.min(prev + 10, 150));
+    if (action === 'decrease') setFontSize(prev => Math.max(prev - 10, 80));
+    if (action === 'reset') setFontSize(100);
   };
 
   if (!isClient) {
     return (
       <div className="app-loading-state">
         <div className="app-loading-spinner"></div>
-        <p>Loading Application...</p>
+        <p>Loading Annadata...</p>
       </div>
     );
   }
 
   return (
-    <div className="protein-engineering-app">
-      <header className="app-hero">
-        <div className="hero-bg-pattern"></div>
-        <div className="hero-content-wrapper">
-          <div className="hero-badge">
-            <span className="badge-icon">🧬</span>
-            <span className="badge-text">India-first Climate &amp; Protein Intelligence</span>
+    <div className="protein-engineering-app ux4g-body">
+      {/* UX4G Top Strip */}
+      <div className="ux4g-top-strip">
+        <div className="ux4g-top-strip-left">
+          <div className="ux4g-top-strip-flag" role="img" aria-label="Indian Flag"></div>
+          <span className="ux4g-top-strip-text">Government of India Inspired UI</span>
+        </div>
+        <div className="ux4g-top-strip-right">
+          <button onClick={handleSkipToContent} className="ux4g-a11y-btn">Skip to Main Content</button>
+          <div className="ux4g-a11y-controls" style={{ display: 'flex', gap: '0.25rem' }}>
+            <button onClick={() => handleFontSizeChange('decrease')} className="ux4g-a11y-btn" title="Decrease Font Size">A-</button>
+            <button onClick={() => handleFontSizeChange('reset')} className="ux4g-a11y-btn" title="Reset Font Size">A</button>
+            <button onClick={() => handleFontSizeChange('increase')} className="ux4g-a11y-btn" title="Increase Font Size">A+</button>
           </div>
-          <h1 className="hero-title">
-            Agricultural Intelligence for India&apos;s Annadata
-          </h1>
-          <p className="hero-description">
-            Design climate-smart crop traits for Indian states and seasons with advanced protein engineering,
-            pan-India datasets, and interactive 3D molecular visualization.
-          </p>
+        </div>
+      </div>
+
+      {/* UX4G Header */}
+      <header>
+        <div className="ux4g-header">
+          <div className="ux4g-header-inner">
+            <div className="ux4g-brand">
+              <div className="ux4g-logo-wrapper">
+                {/* Use a placeholder or the actual logo if available */}
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🌾</div>
+              </div>
+              <div className="ux4g-brand-text">
+                <h1 className="ux4g-brand-title">Annadata</h1>
+                <span className="ux4g-brand-subtitle">Kisan Ki Unnati</span>
+              </div>
+            </div>
+
+            <nav className="ux4g-nav">
+              <button
+                onClick={() => setActiveTab('home')}
+                className={`ux4g-nav-link ${activeTab === 'home' ? 'ux4g-nav-link-active' : ''}`}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                Home
+              </button>
+              <button
+                onClick={() => setActiveTab('engineering')}
+                className={`ux4g-nav-link ${activeTab === 'engineering' ? 'ux4g-nav-link-active' : ''}`}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                Protein Engineering
+              </button>
+              <button
+                onClick={() => setActiveTab('resources')}
+                className={`ux4g-nav-link ${activeTab === 'resources' ? 'ux4g-nav-link-active' : ''}`}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                Resources
+              </button>
+            </nav>
+          </div>
         </div>
       </header>
 
-      <main className="app-main">
-        <div className="content-layout">
-          <aside className="config-panel">
-            <div className="panel-wrapper">
-              <div className="panel-header-section">
-                <div className="panel-icon-wrapper">
-                  <span className="panel-icon">⚙️</span>
-                </div>
-                <div className="panel-header-text">
-                  <h2 className="panel-heading">Trait Configuration</h2>
-                  <p className="panel-subheading">Optimize crop characteristics</p>
-                </div>
-              </div>
-
-              <ProteinEngineering
-                config={config}
-                onTraitChange={handleTraitChange}
-                onCropChange={handleCropChange}
-                onRegionChange={handleRegionChange}
-                onSeasonChange={handleSeasonChange}
-                onEngineer={handleEngineer}
-                onReset={handleReset}
-                loading={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="error-alert">
-                <div className="alert-icon-wrapper">
-                  <span className="alert-icon">⚠️</span>
-                </div>
-                <div className="alert-content">
-                  <h4 className="alert-title">Connection Error</h4>
-                  <p className="alert-message">{error}</p>
-                </div>
-              </div>
-            )}
-          </aside>
-
-          <section className="results-panel">
-            {result ? (
-              <>
-                <div className="stats-container">
-                  <div className="stat-box stat-primary">
-                    <div className="stat-icon-bg">
-                      <span className="stat-emoji">📈</span>
-                    </div>
-                    <div className="stat-details">
-                      <p className="stat-label">Yield Increase</p>
-                      <p className="stat-value">{result.yield_increase_percent.toFixed(1)}%</p>
-                      <p className="stat-sublabel">Estimated improvement</p>
-                    </div>
-                  </div>
-
-                  <div className="stat-box stat-success">
-                    <div className="stat-icon-bg">
-                      <span className="stat-emoji">🌾</span>
-                    </div>
-                    <div className="stat-details">
-                      <p className="stat-label">Projected Yield</p>
-                      <p className="stat-value">{result.projected_yield.toFixed(0)}</p>
-                      <p className="stat-sublabel">kg/hectare</p>
-                    </div>
-                  </div>
-
-                  <div className="stat-box stat-info">
-                    <div className="stat-icon-bg">
-                      <span className="stat-emoji">🛡️</span>
-                    </div>
-                    <div className="stat-details">
-                      <p className="stat-label">Resilience</p>
-                      <p className="stat-value">{result.climate_resilience_score.toFixed(0)}</p>
-                      <p className="stat-sublabel">Climate adaptation</p>
-                    </div>
-                  </div>
-
-                  <div className="stat-box stat-warning">
-                    <div className="stat-icon-bg">
-                      <span className="stat-emoji">✅</span>
-                    </div>
-                    <div className="stat-details">
-                      <p className="stat-label">Feasibility</p>
-                      <p className="stat-value">{result.feasibility_score.toFixed(0)}%</p>
-                      <p className="stat-sublabel">Implementation score</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="tab-navigation">
-                  <div className="tab-buttons-wrapper">
-                    <button
-                      onClick={() => setActiveTab('visualization')}
-                      className={`tab-btn ${activeTab === 'visualization' ? 'tab-btn-active' : ''}`}
-                    >
-                      <span className="tab-icon">🧬</span>
-                      <span className="tab-text">3D Visualization</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => setActiveTab('recommendations')}
-                      className={`tab-btn ${activeTab === 'recommendations' ? 'tab-btn-active' : ''}`}
-                    >
-                      <span className="tab-icon">📊</span>
-                      <span className="tab-text">Recommendations</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="tab-content-area">
-                  {activeTab === 'visualization' ? (
-                    <div className="visualization-container">
-                      <div className="viz-header">
-                        <h3 className="viz-title">Interactive 3D Protein Structure</h3>
-                        <p className="viz-subtitle">
-                          Click atoms to explore molecular properties
-                        </p>
-                      </div>
-                      
-                      <div className="viz-wrapper">
-                        {selectedProtein && (
-                          <ProteinVisualization
-                            proteinId={selectedProtein}
-                            selectedProtein={selectedProtein}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="recommendations-container">
-                      <RecommendationPanel result={result} />
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="empty-results-state">
-                <div className="empty-icon-wrapper">
-                  <span className="empty-icon">🧪</span>
-                </div>
-                <h3 className="empty-title">Ready to Optimize</h3>
-                <p className="empty-description">
-                  Configure crop traits and click <strong>"Engineer Traits"</strong> to begin
-                </p>
-                
-                <div className="features-showcase">
-                  <div className="feature-highlight">
-                    <div className="feature-icon">⚛️</div>
-                    <div className="feature-text">
-                      <h4>Interactive 3D</h4>
-                      <p>Clickable structures</p>
-                    </div>
-                  </div>
-
-                  <div className="feature-highlight">
-                    <div className="feature-icon">🔗</div>
-                    <div className="feature-text">
-                      <h4>Bond Analysis</h4>
-                      <p>Real-time data</p>
-                    </div>
-                  </div>
-
-                  <div className="feature-highlight">
-                    <div className="feature-icon">🧬</div>
-                    <div className="feature-text">
-                      <h4>DNA Support</h4>
-                      <p>Auto-detection</p>
-                    </div>
-                  </div>
-
-                  <div className="feature-highlight">
-                    <div className="feature-icon">📊</div>
-                    <div className="feature-text">
-                      <h4>Statistics</h4>
-                      <p>Comprehensive analysis</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-        </div>
+      <main className="ux4g-main">
+        {activeTab === 'home' && <HomeView />}
+        {activeTab === 'engineering' && (
+          <div className="ux4g-shell">
+            <ProteinEngineeringView />
+          </div>
+        )}
+        {activeTab === 'resources' && <ResourcesView />}
       </main>
+
+      <footer className="ux4g-shell">
+        <div className="ux4g-footer">
+          <div className="ux4g-footer-inner">
+            <div>
+              <h4 className="ux4g-footer-title">Annadata Platform</h4>
+              <p className="ux4g-footer-text">
+                Empowering Indian farmers with climate-resilient crop traits designed through advanced protein engineering and AI.
+              </p>
+            </div>
+            <div className="ux4g-footer-right">
+              <div className="ux4g-footer-links">
+                <a
+                  href="https://github.com/pranav271103/Annadata"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ux4g-footer-link"
+                >
+                  Github
+                </a>
+                <a href="mailto:raman@rmnm.in" className="ux4g-footer-link">Contact Us</a>
+              </div>
+              <div className="ux4g-footer-meta">
+                © {new Date().getFullYear()} Annadata. All rights reserved.
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
