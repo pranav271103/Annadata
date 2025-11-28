@@ -41,7 +41,7 @@ export default function ProteinVisualization({
     if (!mounted) return;
 
     console.log('🔧 [3Dmol] Initializing 3Dmol.js...');
-    
+
     if (typeof window !== 'undefined' && !(window as any).$3Dmol) {
       console.log('📦 [3Dmol] Loading library from CDN...');
       const script = document.createElement('script');
@@ -86,7 +86,7 @@ export default function ProteinVisualization({
 
     try {
       const container = containerRef.current;
-      
+
       if (!container) {
         console.error('❌ [Container] Container is null');
         setError('Container not found');
@@ -102,7 +102,7 @@ export default function ProteinVisualization({
       const config = { backgroundColor: 'white' };
       console.log('🎨 [3Dmol] Creating viewer...');
       const viewer = $3Dmol.createViewer(container, config);
-      
+
       if (!viewer) {
         console.error('❌ [3Dmol] Failed to create viewer');
         setError('Failed to create viewer');
@@ -129,7 +129,7 @@ export default function ProteinVisualization({
         .then((response) => {
           clearTimeout(timeoutId);
           console.log(`📥 [Protein] Response: ${response.status} ${response.statusText}`);
-          
+
           if (!response.ok) {
             throw new Error(`PDB fetch failed: ${response.status}`);
           }
@@ -137,7 +137,7 @@ export default function ProteinVisualization({
         })
         .then((pdbData) => {
           console.log(`📊 [Protein] Data received: ${pdbData.length} characters`);
-          
+
           // Add model
           console.log('🏗️ [3Dmol] Adding model...');
           viewer.addModel(pdbData, 'pdb');
@@ -179,15 +179,15 @@ export default function ProteinVisualization({
               });
 
               // Highlight clicked atom
-              viewer.addStyle(
-                { serial: atom.serial },
-                {
-                  sphere: {
-                    radius: 0.5,
-                    color: 'yellow',
-                  },
-                }
-              );
+              // viewer.addStyle(
+              //   { serial: atom.serial },
+              //   {
+              //     sphere: {
+              //       radius: 0.5,
+              //       color: 'yellow',
+              //     },
+              //   }
+              // );
 
               viewer.render();
 
