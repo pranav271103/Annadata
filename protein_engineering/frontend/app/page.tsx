@@ -160,7 +160,7 @@ export default function ProteinEngineeringPage() {
         <div className="hero-content-wrapper">
           <div className="hero-badge">
             <span className="badge-icon">🧬</span>
-            <span className="badge-text">India-first Climate &amp; Protein Intelligence</span>
+            <span className="badge-text">India's-first Climate &amp; Protein Intelligence</span>
           </div>
           <h1 className="hero-title">
             Agricultural Intelligence for India&apos;s Annadata
