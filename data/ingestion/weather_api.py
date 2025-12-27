@@ -15,10 +15,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 import numpy as np
 
-# Load environment variables
+
 load_dotenv()
 
-# Configure logging
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
