@@ -1,19 +1,23 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Protein Engineering Platform',
-  description: 'AI-powered molecular crop optimization',
-}
+  title: 'Annadata – Agricultural Intelligence for India',
+  description:
+    'UX4G-inspired Indian agriculture platform for climate-smart crop and protein optimization.',
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="ux4g-body">
+        {children}
+      </body>
     </html>
-  )
+  );
 }
