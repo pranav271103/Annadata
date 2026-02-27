@@ -12,7 +12,6 @@
 [![Qiskit](https://img.shields.io/badge/Qiskit-1.1+-purple.svg)](https://qiskit.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/Build-In%20Development-orange.svg)](#)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 > **Revolutionizing precision agriculture through the power of quantum computing, artificial intelligence, and multi-modal data integration.**
 
@@ -157,7 +156,6 @@ Visit `http://localhost:3000` for the farmer dashboard and `http://localhost:500
 - [Development Setup](docs/DEVELOPMENT.md)
 - [Architecture Overview](docs/architecture/system-design.md)
 - [Quantum Algorithms](docs/architecture/quantum-algorithms.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
 
 ### Academic Resources
 - [Technical Paper](docs/academic/papers/quantum-agri-forecasting-2026.pdf)
@@ -232,11 +230,6 @@ curl -X POST "http://localhost:5000/api/v1/predict/yield" \
 - **February 2026**: Feature modules complete
 - **April 2026**: System integration and final deployment
 
-### Performance Benchmarks
-Track our progress toward quantum advantage:
-- **Current MSE**: Targeting <28 (vs. classical baseline of ~45)
-- **Pilot Farms**: 5+ cooperatives signed up for field testing
-- **Data Sources**: 4 major APIs integrated, 1000+ historical records processed
 
 ## Team
 
@@ -267,7 +260,6 @@ We welcome contributions from the quantum computing, agriculture, and AI communi
 - **Documentation**: Tutorials, examples, and user guides
 - **Testing**: Unit tests, integration tests, and performance benchmarks
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Project Metrics
 

@@ -1,0 +1,13 @@
+name,slug,city,district,state,markets,commodities,url,latitude,longitude
+Mandsaur,mandsaur,Mandsaur,Mandsaur,Madhya Pradesh,Mandsaur APMC,,https://www.kisaanhelpline.com/mandi-list/mandsaur,24.0713,75.0662
+Ujjain,ujjain,Ujjain,Ujjain,Madhya Pradesh,Ujjain APMC,,https://www.kisaanhelpline.com/mandi-list/ujjain,23.1765,75.7885
+Indore,indore,Indore,Indore,Madhya Pradesh,Indore APMC,,https://www.kisaanhelpline.com/mandi-list/indore,22.7196,75.8577
+Bhopal,bhopal,Bhopal,Bhopal,Madhya Pradesh,Bhopal APMC,,https://www.kisaanhelpline.com/mandi-list/bhopal,23.2599,77.4126
+Agra,agra,Agra,Agra,Uttar Pradesh,Agra APMC,,https://www.kisaanhelpline.com/mandi-list/agra,27.1767,78.0081
+Lucknow,lucknow,Lucknow,Lucknow,Uttar Pradesh,Lucknow APMC,,https://www.kisaanhelpline.com/mandi-list/lucknow,26.8467,80.9462
+Jaipur,jaipur,Jaipur,Jaipur,Rajasthan,Jaipur APMC,,https://www.kisaanhelpline.com/mandi-list/jaipur,26.9124,75.7873
+Ludhiana,ludhiana,Ludhiana,Ludhiana,Punjab,Ludhiana APMC,,https://www.kisaanhelpline.com/mandi-list/ludhiana,30.901,75.8573
+Karnal,karnal,Karnal,Karnal,Haryana,Karnal APMC,,https://www.kisaanhelpline.com/mandi-list/karnal,29.6857,76.9905
+Pune,pune,Pune,Pune,Maharashtra,Pune APMC,,https://www.kisaanhelpline.com/mandi-list/pune,18.5204,73.8567
+Ahmedabad,ahmedabad,Ahmedabad,Ahmedabad,Gujarat,Ahmedabad APMC,,https://www.kisaanhelpline.com/mandi-list/ahmedabad,23.0225,72.5714
+Azadpur,azadpur,Azadpur,North Delhi,Delhi,Azadpur APMC,,https://www.kisaanhelpline.com/mandi-list/azadpur,28.7041,77.1025
