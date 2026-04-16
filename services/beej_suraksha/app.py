@@ -429,6 +429,34 @@ async def _get_dealer_reports(dealer_name: str, db: AsyncSession) -> list[dict]:
 async def lifespan(app: FastAPI):
     """Application lifespan: initialize and cleanup resources."""
     await init_db()
+    
+    # Create a demo seed batch if the table is empty for UX testing
+    from services.shared.db.session import async_session_factory
+    async with async_session_factory() as db:
+        result = await db.execute(select(sa_func.count()).select_from(SeedBatch))
+        count = result.scalar()
+        if count == 0:
+            demo_batch = SeedBatch(
+                qr_code_id="BS-DEMO-2025",
+                manufacturer="IARI",
+                manufacturer_verified=True,
+                seed_variety="HD-2967",
+                crop_type="wheat",
+                batch_number="B-999-DEMO",
+                manufacture_date="2025-01-01",
+                expiry_date="2026-01-01",
+                quantity_kg=50.0,
+                certification_id="CERT-DEMO-001",
+                status="active",
+                supply_chain=[
+                    {"checkpoint": "manufacturer", "location": "New Delhi", "timestamp": "2025-01-01T10:00:00Z", "verified": True},
+                    {"checkpoint": "released", "location": "Beej Suraksha", "timestamp": "2025-01-02T12:00:00Z", "verified": True}
+                ],
+            )
+            db.add(demo_batch)
+            await db.commit()
+            print("✓ Demo seed BS-DEMO-2025 created.")
+            
     yield
     await close_db()
 

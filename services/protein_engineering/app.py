@@ -18,6 +18,7 @@ Endpoints:
   GET  /auth/me                                    - Current user info
 """
 
+import os
 import sys
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -26,7 +27,7 @@ from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Bridge to the existing protein_engineering backend module
 _legacy_backend = (
@@ -111,10 +112,7 @@ class AgriculturalDataEngine:
     def __init__(self):
         self.weather_data: Optional[pd.DataFrame] = None
         self.crop_data: Optional[pd.DataFrame] = None
-        # Try service-local data first, then legacy backend data
         self.data_dir = Path(__file__).parent / "data"
-        if not self.data_dir.exists():
-            self.data_dir = _legacy_backend / "data"
         self.load_data()
 
     def load_data(self):
@@ -564,6 +562,112 @@ async def get_recommendations(crop: str, region: str, season: str):
         "crop_baseline": crop_perf,
         "optimal_trait_combination": generate_optimal_combination(climate, crop_perf),
     }
+
+
+# ============================================================
+# AI-Powered Recommendations (NVIDIA NIM)
+# ============================================================
+
+import httpx as _httpx
+
+
+class AIRecommendationRequest(BaseModel):
+    crop: str
+    region: str
+    season: str = "kharif"
+    trait_goals: Dict[str, float] = Field(
+        default_factory=lambda: {"drought_tolerance": 50},
+        description="Dict of trait_name -> intensity (0-100)",
+    )
+
+
+@app.post("/ai-recommendations", tags=["ai"])
+async def ai_recommendations(req: AIRecommendationRequest):
+    """
+    AI-generated protein engineering recommendations using NVIDIA NIM.
+    Falls back to rule-based recommendations.
+    """
+    # Build trait context
+    trait_context = {}
+    for trait_name, intensity in req.trait_goals.items():
+        if trait_name in TRAIT_PROTEIN_MAPPING:
+            td = TRAIT_PROTEIN_MAPPING[trait_name]
+            trait_context[trait_name] = {
+                "intensity": intensity,
+                "proteins": td["proteins"],
+                "genes": td["genes"],
+                "mechanism": td["mechanism"],
+                "pdb_ids": td["pdb_ids"],
+            }
+
+    api_key = os.environ.get("NVIDIA_API_KEY", "")
+    if not api_key:
+        # Fallback to rule-based
+        engine = _get_engine()
+        climate = engine.get_regional_climate_profile(req.region)
+        return {
+            "ai_analysis": "NVIDIA API key not configured. Showing rule-based results.",
+            "priority_traits": prioritize_traits_by_climate(climate),
+            "trait_context": trait_context,
+            "source": "rule_based",
+        }
+
+    system_prompt = (
+        "You are a Bio-Engineering AI for Annadata OS. "
+        "Analyze the trait engineering goals for the given crop in the specified region. "
+        "Recommend:\n"
+        "1. **Target Proteins** - specific proteins to modify with PDB IDs\n"
+        "2. **Gene Targets** - CRISPR/gene editing targets\n"
+        "3. **Expected Outcomes** - yield and resilience projections\n"
+        "4. **Risk Assessment** - feasibility and off-target risks\n\n"
+        "Be concise (<=250 words). Use bullet points."
+    )
+
+    trait_summary = "\n".join(
+        f"- {k}: {v['intensity']}% intensity, proteins={v['proteins']}, genes={v['genes']}"
+        for k, v in trait_context.items()
+    )
+    user_prompt = (
+        f"Crop: {req.crop}\nRegion: {req.region}\nSeason: {req.season}\n"
+        f"\nTrait Engineering Goals:\n{trait_summary}"
+    )
+
+    try:
+        async with _httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "meta/llama-3.3-70b-instruct",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "temperature": 0.4,
+                    "max_tokens": 512,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            ai_text = data["choices"][0]["message"]["content"]
+            return {
+                "ai_analysis": ai_text,
+                "trait_context": trait_context,
+                "source": "nvidia_nim",
+                "model": "meta/llama-3.3-70b-instruct",
+            }
+    except Exception as e:
+        engine = _get_engine()
+        climate = engine.get_regional_climate_profile(req.region)
+        return {
+            "ai_analysis": f"AI analysis unavailable ({e}). Showing rule-based results.",
+            "priority_traits": prioritize_traits_by_climate(climate),
+            "trait_context": trait_context,
+            "source": "rule_based",
+        }
 
 
 # ============================================================

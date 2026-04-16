@@ -55,10 +55,18 @@ type AlertsResponse = {
   }[];
 };
 
+const CROPS = ["Wheat", "Rice", "Cotton", "Maize", "Sugarcane", "Mustard", "Soybean", "Groundnut", "Tomato", "Potato"];
+const REGIONS = ["Punjab", "Haryana", "Uttar Pradesh", "Rajasthan", "Madhya Pradesh", "Maharashtra", "Gujarat", "Karnataka", "Tamil Nadu", "Kerala", "West Bengal", "Bihar"];
+const SYMPTOM_OPTIONS = [
+  "Yellowing leaves", "Brown spots", "Wilting", "Leaf curling",
+  "White powder", "Black lesions", "Stunted growth", "Holes in leaves",
+  "Root rot", "Stem borer", "Fruit spots", "Water soaking",
+];
+
 export default function FasalRakshakPage() {
   const [crop, setCrop] = useState("wheat");
   const [region, setRegion] = useState("punjab");
-  const [symptoms, setSymptoms] = useState("yellowing leaves, brown spots");
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(["yellowing leaves", "brown spots"]);
   const [temperature, setTemperature] = useState("28");
   const [humidity, setHumidity] = useState("78");
   const [detection, setDetection] = useState<DetectionResponse | null>(null);
@@ -82,6 +90,12 @@ export default function FasalRakshakPage() {
     [detection],
   );
 
+  function toggleSymptom(s: string) {
+    setSelectedSymptoms((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+    );
+  }
+
   async function runDetection() {
     setStatus("loading");
     try {
@@ -90,10 +104,7 @@ export default function FasalRakshakPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           crop,
-          symptoms: symptoms
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
+          symptoms: selectedSymptoms,
           temperature_celsius: Number(temperature),
           humidity_pct: Number(humidity),
           region,
@@ -139,57 +150,74 @@ export default function FasalRakshakPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-muted)]">
-                Crop
-              </label>
-              <input
+              <label className="text-xs font-medium text-[var(--color-text-muted)]">Crop</label>
+              <select
                 value={crop}
-                onChange={(event) => setCrop(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm"
-              />
+                onChange={(e) => setCrop(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              >
+                {CROPS.map((c) => (
+                  <option key={c} value={c.toLowerCase()}>{c}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-muted)]">
-                Region
-              </label>
-              <input
+              <label className="text-xs font-medium text-[var(--color-text-muted)]">Region</label>
+              <select
                 value={region}
-                onChange={(event) => setRegion(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm"
-              />
+                onChange={(e) => setRegion(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              >
+                {REGIONS.map((r) => (
+                  <option key={r} value={r.toLowerCase()}>{r}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-muted)]">
-                Temperature (C)
-              </label>
+              <label className="text-xs font-medium text-[var(--color-text-muted)]">Temperature (°C)</label>
               <input
                 value={temperature}
-                onChange={(event) => setTemperature(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm"
+                onChange={(e) => setTemperature(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-[var(--color-text-muted)]">
-                Humidity (%)
-              </label>
+              <label className="text-xs font-medium text-[var(--color-text-muted)]">Humidity (%)</label>
               <input
                 value={humidity}
-                onChange={(event) => setHumidity(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm"
+                onChange={(e) => setHumidity(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-[var(--color-text-muted)]">
-                Symptoms (comma separated)
-              </label>
-              <input
-                value={symptoms}
-                onChange={(event) => setSymptoms(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-2 text-sm"
-              />
+          </div>
+          {/* Symptom badge selector */}
+          <div className="mt-4">
+            <label className="text-xs font-medium text-[var(--color-text-muted)]">Symptoms (click to select)</label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {SYMPTOM_OPTIONS.map((s) => {
+                const active = selectedSymptoms.includes(s.toLowerCase());
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => toggleSymptom(s.toLowerCase())}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all border ${active
+                        ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-sm"
+                        : "bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-text)]"
+                      }`}
+                  >
+                    {active ? "✓ " : ""}{s}
+                  </button>
+                );
+              })}
             </div>
+            {selectedSymptoms.length > 0 && (
+              <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+                {selectedSymptoms.length} symptom{selectedSymptoms.length > 1 ? "s" : ""} selected
+              </p>
+            )}
           </div>
           <div className="mt-4 flex items-center gap-3">
             <Button onClick={runDetection} disabled={status === "loading"}>

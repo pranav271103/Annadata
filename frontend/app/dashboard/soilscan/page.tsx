@@ -337,7 +337,7 @@ export default function SoilScanPage() {
               disabled={status === "loading"}
               className="border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white"
             >
-              {status === "loading" ? "Scanning Hardware..." : "🚀 Start Live Scan"}
+              {status === "loading" ? "Scanning Hardware..." : "Start Live Scan"}
             </Button>
             {status === "error" ? (
               <span className="text-sm text-[var(--color-error)]">

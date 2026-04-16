@@ -22,6 +22,9 @@ class SharedSettings(BaseSettings):
     DEBUG: bool = True
     SECRET_KEY: str = "insecure-default-key-change-in-production"
 
+    # Caching
+    USE_SQLITE: bool = False  # Set to True for zero-install mode
+
     # PostgreSQL
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "annadata"
@@ -47,6 +50,8 @@ class SharedSettings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
+        if self.USE_SQLITE:
+            return f"sqlite+aiosqlite:///{BASE_DIR / 'annadata.db'}"
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
@@ -54,6 +59,8 @@ class SharedSettings(BaseSettings):
 
     @property
     def SYNC_DATABASE_URL(self) -> str:
+        if self.USE_SQLITE:
+            return f"sqlite:///{BASE_DIR / 'annadata.db'}"
         return (
             f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"

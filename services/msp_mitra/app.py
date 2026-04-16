@@ -508,6 +508,116 @@ async def predict_prices(
     return result
 
 
+# ---------------------------------------------------------------------------
+# Variety-Aware Demo Predictor (rule-based fallback)
+# ---------------------------------------------------------------------------
+
+# MSP baselines (₹/quintal, 2024-25 season)
+MSP_2024: Dict[str, float] = {
+    "wheat": 2275, "rice": 2300, "paddy": 2300, "maize": 2225,
+    "bajra": 2500, "jowar": 3371, "ragi": 3846, "barley": 1850,
+    "cotton": 7020, "sugarcane": 3150, "jute": 5050, "mustard": 5650,
+    "groundnut": 6377, "soybean": 4892, "sunflower": 5650,
+    "tur": 7000, "moong": 8558, "urad": 6950, "masoor": 6425,
+    "chana": 5440, "onion": 1800, "tomato": 2200, "potato": 1200,
+}
+
+# Variety multipliers: premium varieties get higher base prices
+VARIETY_MULTIPLIERS: Dict[str, float] = {
+    # Rice
+    "basmati": 2.2, "pusa basmati": 2.4, "ir-64": 1.0, "sona masuri": 1.3,
+    "ponni": 1.1, "common": 0.85, "superfine": 1.6,
+    # Wheat
+    "sharbati": 1.8, "lokwan": 1.3, "hd-2967": 1.1, "desi": 1.0, "mp wheat": 1.4,
+    # Cotton
+    "dch-32": 1.15, "bt cotton": 1.0, "long staple": 1.2,
+    # Pulses
+    "kabuli chana": 1.6, "desi chana": 1.0,
+    # Oilseeds
+    "bold": 1.15, "small": 0.9,
+    # Default
+    "other": 1.0,
+}
+
+
+@app.get("/predict-demo/{commodity}/{state}", tags=["prediction"])
+async def predict_demo(
+    commodity: str,
+    state: str,
+    variety: Optional[str] = Query(None, description="Variety name for price adjustment"),
+    days: int = Query(7, ge=1, le=14),
+):
+    """
+    Always-available price prediction with variety differentiation.
+
+    - Tries the ML ensemble first.
+    - Falls back to a rule-based generator using MSP baselines + variety multipliers.
+    """
+    # 1. Try ML model first
+    if predictor:
+        result = predictor.predict(commodity, state, None, days)
+        if result is None and price_loader:
+            df = price_loader.get_price_for_prediction(commodity, state, None)
+            if not df.empty and len(df) >= 30:
+                predictor.train(df, commodity, state, None)
+                result = predictor.predict(commodity, state, None, days)
+        if result is not None:
+            # Apply variety multiplier to ML predictions
+            mult = 1.0
+            if variety:
+                mult = VARIETY_MULTIPLIERS.get(variety.lower(), 1.0)
+            if mult != 1.0:
+                for p in result.get("predictions", []):
+                    p["predicted_price"] = round(p["predicted_price"] * mult, 2)
+                    p["price_low"] = round(p["price_low"] * mult, 2)
+                    p["price_high"] = round(p["price_high"] * mult, 2)
+                result["variety"] = variety
+                result["variety_multiplier"] = mult
+            return result
+
+    # 2. Rule-based fallback
+    base_key = commodity.lower().replace(" ", "")
+    base_msp = MSP_2024.get(base_key, MSP_2024.get(commodity.lower(), 2500.0))
+
+    mult = 1.0
+    if variety:
+        mult = VARIETY_MULTIPLIERS.get(variety.lower(), 1.0)
+
+    base_price = base_msp * mult
+    predictions = []
+    rng = np.random.default_rng(hash((commodity, state, variety or "")) & 0xFFFFFFFF)
+
+    for i in range(1, days + 1):
+        day_date = (datetime.utcnow() + timedelta(days=i)).strftime("%Y-%m-%d")
+        # Sinusoidal fluctuation ±3% with small random noise
+        fluctuation = 1.0 + 0.03 * math.sin(2 * math.pi * i / 7) + rng.normal(0, 0.008)
+        price = round(base_price * fluctuation, 2)
+        predictions.append({
+            "date": day_date,
+            "predicted_price": price,
+            "price_low": round(price * 0.96, 2),
+            "price_high": round(price * 1.04, 2),
+            "models_used": {"rule_based": True, "prophet": False, "linear_regression": False},
+        })
+
+    first_p = predictions[0]["predicted_price"]
+    last_p = predictions[-1]["predicted_price"]
+    trend_pct = ((last_p - first_p) / first_p) * 100 if first_p else 0
+
+    return {
+        "commodity": commodity,
+        "state": state,
+        "variety": variety,
+        "variety_multiplier": mult,
+        "predictions": predictions,
+        "trend": "rising" if trend_pct > 1 else ("falling" if trend_pct < -1 else "stable"),
+        "trend_percent": round(trend_pct, 2),
+        "confidence_score": 65,
+        "model_key": f"{commodity}_{state}_demo",
+        "ensemble_info": {"prophet_enabled": False, "models_count": 1, "mode": "rule_based_demo"},
+    }
+
+
 @app.get("/recommend/{commodity}/{state}", tags=["prediction"])
 async def get_recommendation(
     commodity: str,

@@ -1540,6 +1540,106 @@ async def quantum_correlation(req: QuantumCorrelationRequest):
 
 
 # -------------------------------------------------------------------
+# NVIDIA NIM AI Recommendations
+# -------------------------------------------------------------------
+
+import httpx as _httpx
+
+
+class AIRecommendationRequest(BaseModel):
+    """Input for AI-powered soil recommendations."""
+    nitrogen_ppm: float
+    phosphorus_ppm: float
+    potassium_ppm: float
+    ph_level: float
+    health_score: float
+    soil_type: str = "unknown"
+    moisture_pct: float = 30.0
+    organic_carbon_pct: float = 0.8
+
+
+@app.post("/ai-recommendations", tags=["ai"])
+async def ai_recommendations(req: AIRecommendationRequest):
+    """
+    Get AI-powered soil health recommendations using NVIDIA NIM (Llama 3.3).
+    Falls back to rule-based recommendations if the API call fails.
+    """
+    soil_summary = (
+        f"Nitrogen: {req.nitrogen_ppm} ppm, Phosphorus: {req.phosphorus_ppm} ppm, "
+        f"Potassium: {req.potassium_ppm} ppm, pH: {req.ph_level}, "
+        f"Moisture: {req.moisture_pct}%, Organic Carbon: {req.organic_carbon_pct}%, "
+        f"Health Score: {req.health_score}/100, Soil Type: {req.soil_type}"
+    )
+
+    api_key = settings.NVIDIA_API_KEY
+    if not api_key:
+        # Fallback to rule-based
+        sample = SoilSampleRequest(
+            plot_id="ai-rec", latitude=0, longitude=0,
+            nitrogen_ppm=req.nitrogen_ppm, phosphorus_ppm=req.phosphorus_ppm,
+            potassium_ppm=req.potassium_ppm, ph_level=req.ph_level,
+            organic_carbon_pct=req.organic_carbon_pct, moisture_pct=req.moisture_pct,
+        )
+        recs = _build_recommendations(sample)
+        return {
+            "ai_recommendations": "\n".join(f"- {r.message}" for r in recs),
+            "source": "rule_based",
+            "reason": "NVIDIA_API_KEY not configured",
+        }
+
+    system_prompt = (
+        "You are an expert AI Agronomist for Annadata OS, India's leading agricultural platform. "
+        "Based on the soil data provided, give actionable recommendations:\n"
+        "1. **Fertilizer Plan** — specific fertilizers, quantities per hectare\n"
+        "2. **Soil Amendments** — lime, gypsum, organic matter interventions\n"
+        "3. **Crop Suitability** — top 3 crops suited for this soil profile\n"
+        "4. **Urgent Actions** — any immediate interventions needed\n\n"
+        "Be concise (≤200 words). Use bullet points. Use farmer-friendly language."
+    )
+
+    try:
+        async with _httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "meta/llama-3.3-70b-instruct",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Soil Analysis Results:\n{soil_summary}"},
+                    ],
+                    "temperature": 0.4,
+                    "max_tokens": 512,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            ai_text = data["choices"][0]["message"]["content"]
+            return {
+                "ai_recommendations": ai_text,
+                "source": "nvidia_nim",
+                "model": "meta/llama-3.3-70b-instruct",
+            }
+    except Exception as e:
+        # Fallback
+        sample = SoilSampleRequest(
+            plot_id="ai-rec", latitude=0, longitude=0,
+            nitrogen_ppm=req.nitrogen_ppm, phosphorus_ppm=req.phosphorus_ppm,
+            potassium_ppm=req.potassium_ppm, ph_level=req.ph_level,
+            organic_carbon_pct=req.organic_carbon_pct, moisture_pct=req.moisture_pct,
+        )
+        recs = _build_recommendations(sample)
+        return {
+            "ai_recommendations": "\n".join(f"- {r.message}" for r in recs),
+            "source": "rule_based",
+            "reason": f"NIM API error: {e}",
+        }
+
+
+# -------------------------------------------------------------------
 # Live Sensor Analysis (Arduino + NVIDIA NIM)
 # -------------------------------------------------------------------
 
@@ -1572,7 +1672,9 @@ async def live_scan(req: LiveScanRequest):
             status_code=500, detail="NVIDIA_API_KEY not configured in .env."
         )
 
-    client = OpenAI(
+    # Use AsyncOpenAI to avoid blocking the event loop (fixes ECONNRESET)
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
         api_key=api_key
     )
@@ -1602,7 +1704,7 @@ async def live_scan(req: LiveScanRequest):
     """
 
     try:
-        completion = client.chat.completions.create(
+        completion = await client.chat.completions.create(
             model="mistralai/mistral-large-3-675b-instruct-2512",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,

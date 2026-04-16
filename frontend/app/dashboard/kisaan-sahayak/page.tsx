@@ -243,8 +243,8 @@ export default function KisaanSahayakPage() {
           Kisaan Sahayak &mdash; AI Assistant
         </h1>
         <p className="mt-1 text-[var(--color-text-muted)]">
-          Your multilingual AI farming assistant powered by Gemini &mdash; ask about
-          fertilizers, irrigation, pest control, government schemes, and more.
+          The official Annadata OS agricultural assistant &mdash; powered by Team Annadata to help you with
+          fertilizers, irrigation, pest control, and government schemes.
         </p>
       </div>
 
@@ -305,11 +305,10 @@ export default function KisaanSahayakPage() {
                       className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-lg px-4 py-2.5 ${
-                          msg.role === "user"
-                            ? "bg-[var(--color-primary)] text-white"
-                            : "bg-[var(--color-border)] text-[var(--color-text)]"
-                        }`}
+                        className={`max-w-[85%] rounded-lg px-4 py-2.5 ${msg.role === "user"
+                          ? "bg-[var(--color-primary)] text-white"
+                          : "bg-[var(--color-border)] text-[var(--color-text)]"
+                          }`}
                       >
                         {msg.role === "assistant" ? (
                           <FormattedMessage text={msg.content} />
@@ -324,13 +323,9 @@ export default function KisaanSahayakPage() {
                         {msg.modelUsed && (
                           <Badge
                             variant="outline"
-                            className={`text-[10px] ${
-                              msg.modelUsed.includes("Gemini")
-                                ? "border-[var(--color-accent)] text-[var(--color-accent)]"
-                                : "border-[var(--color-text-muted)] text-[var(--color-text-muted)]"
-                            }`}
+                            className={`text-[10px] border-[var(--color-primary)] text-[var(--color-primary)]`}
                           >
-                            {msg.modelUsed}
+                            Annadata Support
                           </Badge>
                         )}
                         {msg.suggestedActions?.map((action, ai) => (
@@ -368,14 +363,13 @@ export default function KisaanSahayakPage() {
                 <button
                   onClick={toggleVoice}
                   disabled={status === "loading"}
-                  className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
-                    isListening
-                      ? "border-red-500 bg-red-500/10 text-red-500 animate-pulse"
-                      : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]"
-                  } disabled:opacity-50`}
+                  className={`rounded-lg border px-3 py-2 text-sm transition-colors ${isListening
+                    ? "border-red-500 bg-red-500/10 text-red-500 animate-pulse"
+                    : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]"
+                    } disabled:opacity-50`}
                   title={isListening ? "Stop listening" : "Voice input (Hindi/English)"}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></svg>
                 </button>
               )}
               <Button
@@ -443,7 +437,7 @@ export default function KisaanSahayakPage() {
                 <Badge variant="outline" className="text-[10px]">
                   {messages.length > 0
                     ? (messages.filter((m) => m.role === "assistant").pop()?.modelUsed ?? "rule-based")
-                    : "Gemini Flash"}
+                    : "Annadata AI"}
                 </Badge>
               </div>
               {messages.length > 0 && (

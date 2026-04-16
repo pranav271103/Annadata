@@ -26,12 +26,12 @@ import {
 } from "recharts";
 
 const villages = [
-  { code: "PB-LDH-01", name: "Ludhiana, Punjab" },
-  { code: "MH-NSK-01", name: "Nashik, Maharashtra" },
-  { code: "UP-LKO-01", name: "Lucknow, UP" },
-  { code: "KA-MYS-01", name: "Mysuru, Karnataka" },
-  { code: "RJ-JPR-01", name: "Jaipur, Rajasthan" },
-  { code: "TN-MDU-01", name: "Madurai, Tamil Nadu" },
+  { code: "PB-LDH-001", name: "Ludhiana, Punjab" },
+  { code: "MH-NSK-001", name: "Nashik, Maharashtra" },
+  { code: "UP-LKO-001", name: "Lucknow, UP" },
+  { code: "KA-MYS-001", name: "Mysuru, Karnataka" },
+  { code: "RJ-JPR-001", name: "Jaipur, Rajasthan" },
+  { code: "TN-MDU-001", name: "Madurai, Tamil Nadu" },
 ] as const;
 
 type Village = (typeof villages)[number];
@@ -43,6 +43,7 @@ export default function MausamChakraPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [advisory, setAdvisory] = useState<any>(null);
   const [stations, setStations] = useState<any[]>([]);
+  const [meteogram, setMeteogram] = useState<any[]>([]);
 
   const chartData = useMemo(
     () =>
@@ -95,6 +96,20 @@ export default function MausamChakraPage() {
           const data = await stationsRes.json();
           setStations(data.stations ?? []);
         }
+        // Fetch NCMRWF meteogram
+        try {
+          const meteoRes = await fetch(`${API_PREFIXES.mausamChakra}/weather/meteogram/${selectedVillage.code}`);
+          if (meteoRes.ok) {
+            const meteoData = await meteoRes.json();
+            setMeteogram((meteoData.forecast ?? []).map((d: any, i: number) => ({
+              hour: `${i * 3}h`,
+              temp: typeof d.temp === 'number' ? +d.temp.toFixed(1) : d.temperature_c,
+              pressure: d.pressure ?? d.pressure_hpa,
+              wind: d.wind_speed_kmh ?? 0,
+              rain: typeof d.rain === 'number' ? +d.rain.toFixed(2) : d.rainfall_mm ?? 0,
+            })));
+          }
+        } catch { /* meteogram optional */ }
       } catch {
         setCurrent(null);
       }
@@ -263,6 +278,58 @@ export default function MausamChakraPage() {
           </CardContent>
         </Card>
 
+        {/* NCMRWF Meteogram */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">NCMRWF 4km Meteogram</CardTitle>
+              <Badge variant="secondary">24hr</Badge>
+            </div>
+            <CardDescription>
+              High-resolution model forecast — Temp, Pressure, Wind, Rain
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {meteogram.length > 0 ? (
+              <ResponsiveContainer width="100%" height={220}>
+                <ComposedChart data={meteogram} margin={CHART_DEFAULTS.margin}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_DEFAULTS.gridStroke} />
+                  <XAxis
+                    dataKey="hour"
+                    tick={{ fontSize: CHART_DEFAULTS.fontSize, fill: CHART_DEFAULTS.axisStroke }}
+                    stroke={CHART_DEFAULTS.axisStroke}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: CHART_DEFAULTS.fontSize, fill: CHART_DEFAULTS.axisStroke }}
+                    stroke={CHART_DEFAULTS.axisStroke}
+                    label={{ value: "\u00b0C / hPa", position: "insideTopLeft", offset: -5, fontSize: 9, fill: CHART_DEFAULTS.axisStroke }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: CHART_DEFAULTS.fontSize, fill: CHART_DEFAULTS.axisStroke }}
+                    stroke={CHART_DEFAULTS.axisStroke}
+                    label={{ value: "mm / km/h", position: "insideTopRight", offset: -5, fontSize: 9, fill: CHART_DEFAULTS.axisStroke }}
+                  />
+                  <Tooltip contentStyle={CHART_DEFAULTS.tooltipStyle} />
+                  <Line yAxisId="left" type="monotone" dataKey="temp" name="Temp (\u00b0C)" stroke={CHART_COLORS.primary} strokeWidth={2} dot={false} />
+                  <Line yAxisId="left" type="monotone" dataKey="pressure" name="Pressure (hPa)" stroke="#8884d8" strokeWidth={1} strokeDasharray="5 5" dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="wind" name="Wind (km/h)" stroke={CHART_COLORS.secondary} strokeWidth={1.5} dot={false} />
+                  <Bar yAxisId="right" dataKey="rain" name="Rain (mm)" fill={CHART_COLORS.accent} opacity={0.6} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-background)]">
+                <p className="text-sm text-[var(--color-text-muted)]">Loading meteogram&hellip;</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Alerts row */}
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -413,27 +480,27 @@ export default function MausamChakraPage() {
             Registered field-level weather monitoring stations
           </CardDescription>
         </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm text-[var(--color-text-muted)]">
-              {stations.length ? (
-                stations.slice(0, 3).map((stn) => (
-                  <li key={stn.station_id} className="flex justify-between">
-                    <span>
-                      {stn.station_id} &mdash; {stn.district}
-                    </span>
-                    <Badge variant={stn.status === "active" ? "default" : "secondary"}>
-                      {stn.status}
-                    </Badge>
-                  </li>
-                ))
-              ) : (
-                <li className="text-[var(--color-text-muted)]">
-                  No stations registered
+        <CardContent>
+          <ul className="space-y-3 text-sm text-[var(--color-text-muted)]">
+            {stations.length ? (
+              stations.slice(0, 3).map((stn) => (
+                <li key={stn.station_id} className="flex justify-between">
+                  <span>
+                    {stn.station_id} &mdash; {stn.district}
+                  </span>
+                  <Badge variant={stn.status === "active" ? "default" : "secondary"}>
+                    {stn.status}
+                  </Badge>
                 </li>
-              )}
-            </ul>
-          </CardContent>
-        </Card>
+              ))
+            ) : (
+              <li className="text-[var(--color-text-muted)]">
+                No stations registered
+              </li>
+            )}
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }

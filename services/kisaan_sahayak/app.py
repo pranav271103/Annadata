@@ -1,6 +1,6 @@
 """Kisaan Sahayak - AI-powered agricultural knowledge assistant for farmers.
 
-Integrates Google Gemini Flash LLM for natural-language advisory while
+Integrates NVIDIA NIM (Llama 3.3) for natural-language advisory while
 retaining rule-based knowledge retrieval as grounding context and fallback.
 """
 
@@ -32,131 +32,97 @@ from services.shared.db.models import ChatMessage, ChatSession, FarmerInteractio
 from services.shared.db.session import close_db, get_db, init_db
 
 # ---------------------------------------------------------------------------
-# Gemini LLM Setup  (free tier: 15 RPM / 1 M tokens/day)
+# NVIDIA NIM Setup (OpenAI-compatible)
 # ---------------------------------------------------------------------------
-logger = logging.getLogger("kisaan_sahayak")
+_NVIDIA_AVAILABLE = False
+_NVIDIA_ENDPOINT = "https://integrate.api.nvidia.com/v1"
+_NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
 
-_GEMINI_AVAILABLE = False
-_gemini_model = None
+_NVIDIA_API_KEY = settings.NVIDIA_API_KEY or os.environ.get("NVIDIA_API_KEY", "")
+if _NVIDIA_API_KEY:
+    _NVIDIA_AVAILABLE = True
+    logger.info("NVIDIA NIM initialised — Annadata Support AI enabled.")
+else:
+    logger.warning("NVIDIA_API_KEY not set — falling back to rule-based chat.")
 
-try:
-    import google.generativeai as genai  # type: ignore[import-untyped]
-
-    _GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-    if _GEMINI_API_KEY:
-        genai.configure(api_key=_GEMINI_API_KEY)
-        _gemini_model = genai.GenerativeModel(
-            "gemini-2.0-flash",
-            generation_config=genai.GenerationConfig(
-                temperature=0.7,
-                top_p=0.9,
-                max_output_tokens=1024,
-            ),
-            safety_settings={
-                "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
-                "HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
-                "HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
-                "HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE",
-            },
-        )
-        _GEMINI_AVAILABLE = True
-        logger.info("Gemini Flash initialised — LLM-enhanced chat enabled.")
-    else:
-        logger.warning("GEMINI_API_KEY not set — falling back to rule-based chat.")
-except ImportError:
-    logger.warning(
-        "google-generativeai not installed — falling back to rule-based chat."
-    )
+import httpx
 
 
-# Simple token-bucket rate limiter for Gemini (15 RPM free tier)
-class _GeminiRateLimiter:
-    """Sliding-window rate limiter: max `capacity` calls per `window` seconds."""
-
-    def __init__(self, capacity: int = 14, window: float = 60.0):
-        self._capacity = capacity
-        self._window = window
-        self._timestamps: list[float] = []
-        self._lock = asyncio.Lock()
-
-    async def acquire(self) -> bool:
-        async with self._lock:
-            now = time.monotonic()
-            self._timestamps = [t for t in self._timestamps if now - t < self._window]
-            if len(self._timestamps) >= self._capacity:
-                return False
-            self._timestamps.append(now)
-            return True
-
-
-_gemini_limiter = _GeminiRateLimiter(capacity=14, window=60.0)
+# No special rate limiter needed for NIM trial keys usually, but we could add one if needed.
 
 
 # ---------------------------------------------------------------------------
-# System prompt for Gemini-enhanced chat
+# System prompt for NVIDIA-enhanced chat
 # ---------------------------------------------------------------------------
 _SYSTEM_PROMPT = """\
-You are **Kisaan Sahayak**, an expert Indian agricultural advisor built by *Annadata OS*.
+You are **Annadata Support Team**, the official agricultural support division of *Annadata OS*. 
+Your goal is to provide professional, empathetic, and highly accurate technical and agricultural support to farmers.
+
+## Support Persona
+- You represent the **Annadata OS** team. Always say "We" (Team Annadata) instead of "I".
+- Be professional yet warm, like a dedicated support team member who cares about the farmer's success.
+- If you don't have an immediate answer from context, say "We are checking our latest research records..." but still provide the best general guidance available.
 
 ## Constraints
 - Reply in the SAME language the farmer uses (Hindi, English, Punjabi, Marathi, etc.).
 - Be concise (≤ 250 words). Use bullet points, bold headers, and practical action items.
 - When knowledge-base data is provided in [CONTEXT], weave it naturally into your answer — \
-do NOT ignore it, and do NOT contradict it with hallucinated data.
-- If the context is empty or irrelevant, rely on your own agricultural knowledge but \
-clearly state "Based on general guidance" so the farmer knows.
+do NOT ignore it, and do NOT contradict it.
 - Always end with 1-2 actionable next steps the farmer can take today.
-- Never give medical, legal, or financial advice beyond standard agricultural economics.
 - Use farmer-friendly language; avoid academic jargon.
 - When mentioning government schemes, include the official portal URL if you know it.
 """
 
 
-async def _call_gemini(
+async def _call_nvidia(
     user_message: str,
     kb_context: str,
     history: list[dict[str, str]],
     language: str = "en",
 ) -> str | None:
-    """Call Gemini Flash with grounding context.  Returns None on any failure."""
-    if not _GEMINI_AVAILABLE or _gemini_model is None:
-        return None
-    if not await _gemini_limiter.acquire():
-        logger.warning("Gemini rate limit reached — falling back to rule-based.")
+    """Call NVIDIA NIM with grounding context. Returns None on any failure."""
+    if not _NVIDIA_AVAILABLE or not _NVIDIA_API_KEY:
         return None
 
     try:
-        # Build the conversation for Gemini
-        gemini_history: list[dict[str, Any]] = []
-        for msg in history[:-1]:  # exclude the current user message (sent separately)
-            role = "user" if msg["role"] == "user" else "model"
-            gemini_history.append({"role": role, "parts": [msg["content"]]})
+        messages = [{"role": "system", "content": _SYSTEM_PROMPT}]
+        
+        # Add history
+        for msg in history[:-1]:
+            messages.append({"role": msg["role"], "content": msg["content"]})
 
-        # Build the contextualised user turn
-        lang_hint = (
-            f"Respond in {'Hindi' if language == 'hi' else language}."
-            if language != "en"
-            else ""
-        )
-        contextualised_prompt = (
-            (
-                f"{lang_hint}\n\n"
-                f"[CONTEXT from Annadata knowledge base]\n{kb_context}\n[/CONTEXT]\n\n"
-                f"Farmer's question: {user_message}"
+        # Build prompt
+        lang_hint = f"Respond in {'Hindi' if language == 'hi' else language}." if language != "en" else ""
+        context_block = f"[CONTEXT from Annadata knowledge base]\n{kb_context}\n[/CONTEXT]\n\n" if kb_context else ""
+        user_prompt = f"{lang_hint}\n\n{context_block}Farmer's question: {user_message}"
+        
+        messages.append({"role": "user", "content": user_prompt})
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{_NVIDIA_ENDPOINT}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {_NVIDIA_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": _NVIDIA_MODEL,
+                    "messages": messages,
+                    "temperature": 0.5,
+                    "top_p": 0.7,
+                    "max_tokens": 1024,
+                },
             )
-            if kb_context
-            else f"{lang_hint}\n\nFarmer's question: {user_message}"
-        )
-
-        chat = _gemini_model.start_chat(history=gemini_history)
-        response = await asyncio.to_thread(
-            chat.send_message,
-            [_SYSTEM_PROMPT, contextualised_prompt],
-        )
-        text = response.text.strip()
-        return text if text else None
+            
+            if response.status_code != 200:
+                logger.error(f"NVIDIA API Error: {response.status_code} - {response.text}")
+                return None
+                
+            data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
+            
     except Exception:
-        logger.exception("Gemini call failed — falling back to rule-based.")
+        logger.exception("NVIDIA NIM call failed — falling back to rule-based.")
         return None
 
 
@@ -2423,21 +2389,21 @@ async def root():
     """Root endpoint returning service info."""
     return {
         "service": "Kisaan Sahayak",
-        "version": "3.0.0",
-        "description": "Multi-Agent Crop Health & Advisory System with Gemini LLM",
-        "llm_status": "active" if _GEMINI_AVAILABLE else "fallback (rule-based)",
+        "version": "3.0.0 (Team Annadata Edition)",
+        "description": "Multi-Agent Crop Health & Advisory System powered by NVIDIA NIM",
+        "llm_status": "active" if _NVIDIA_AVAILABLE else "fallback (rule-based)",
         "features": [
             "Natural language farming Q&A in multiple Indian languages",
-            "Gemini Flash LLM-enhanced responses with KB grounding (rule-based fallback)",
+            "NVIDIA Llama-3.3 (NIM) enhanced responses with KB grounding",
             "Government scheme eligibility and application assistance",
             "Personalized crop calendar and task reminders",
-            "Vision Agent — crop disease classification (PlantVillage 38-class, simulated MobileNetV2/ResNet)",
-            "Verifier Agent — risk/severity assessment (LOW/MEDIUM/HIGH/CRITICAL) with action decisions",
-            "Weather Agent — short-term forecast with irrigation advice",
-            "Market Agent — nearby mandi prices with best selling time recommendation",
-            "Memory Agent — farmer interaction logging and pattern analysis",
-            "LLM Agent — WhatsApp-style multilingual summaries via Gemini Flash (template fallback)",
-            "Full Pipeline — single-request end-to-end analysis (photo → disease + risk + treatment + irrigation + market + history)",
+            "Vision Agent — crop disease classification",
+            "Verifier Agent — disease risk assessment",
+            "Weather Agent — short-term forecast",
+            "Market Agent — nearby mandi prices",
+            "Memory Agent — farmer history logging",
+            "LLM Agent — WhatsApp-style multilingual summaries via NVIDIA NIM",
+            "Full Pipeline — single-request end-to-end analysis",
         ],
         "agents": {
             "vision": "/agent/vision",
@@ -2459,7 +2425,7 @@ async def root():
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
-    """Process a farming question using KB lookup + Gemini LLM enhancement."""
+    """Process a farming question using KB lookup + NVIDIA NIM enhancement."""
     session_id, history = await _get_or_create_session(request.session_id, db)
     await _add_to_session(db, session_id, "user", request.message)
     history.append({"role": "user", "content": request.message})
@@ -2543,24 +2509,24 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     else:
         result = _format_general_response(request.message)
 
-    # ---- Step 2: Gemini enhancement (uses KB text as grounding context) ----
+    # ---- Step 2: NVIDIA enhancement (uses KB text as grounding context) ----
     model_used = "rule-based"
     response_text = result["text"]
 
-    # Only call Gemini when we have a substantive KB answer (not a "which crop?" prompt)
+    # Only call NVIDIA when we have a substantive KB answer (not a "which crop?" prompt)
     # and the response is long enough to be worth enhancing.
     kb_has_content = len(result["text"]) > 100 and intent != "general"
 
-    if _GEMINI_AVAILABLE and kb_has_content:
-        gemini_response = await _call_gemini(
+    if _NVIDIA_AVAILABLE and kb_has_content:
+        nvidia_response = await _call_nvidia(
             user_message=request.message,
             kb_context=result["text"],
             history=history,
             language=request.language,
         )
-        if gemini_response:
-            response_text = gemini_response
-            model_used = "Gemini-2.0-Flash"
+        if nvidia_response:
+            response_text = nvidia_response
+            model_used = "NVIDIA-Llama-3.3"
 
     await _add_to_session(db, session_id, "assistant", response_text)
 
@@ -4287,13 +4253,13 @@ async def _agent_llm(
     format_style: str = "whatsapp",
 ) -> dict[str, Any]:
     """
-    LLM Agent: Generates a comprehensive advisory using Gemini Flash.
-    Falls back to template-based generation if Gemini is unavailable.
+    LLM Agent: Generates a comprehensive advisory using NVIDIA NIM.
+    Falls back to template-based generation if NVIDIA is unavailable.
     """
     now = datetime.now(timezone.utc)
 
-    # --- Try Gemini-enhanced summary first ---
-    if _GEMINI_AVAILABLE:
+    # --- Try NVIDIA-enhanced summary first ---
+    if _NVIDIA_AVAILABLE:
         context_parts: list[str] = []
         if disease_info:
             top = disease_info.get("top_prediction", {})
@@ -4328,13 +4294,13 @@ async def _agent_llm(
         elif format_style == "sms":
             llm_prompt += "\n\nKeep it very brief (≤160 chars) like an SMS."
 
-        gemini_text = await _call_gemini(
+        nvidia_text = await _call_nvidia(
             user_message=llm_prompt,
             kb_context="\n".join(context_parts),
             history=[],
             language=language,
         )
-        if gemini_text:
+        if nvidia_text:
             # Build follow-ups from context
             follow_ups: list[str] = []
             if disease_info:
@@ -4355,10 +4321,10 @@ async def _agent_llm(
                 ]
 
             return {
-                "summary": gemini_text,
+                "summary": nvidia_text,
                 "language": language,
                 "format_style": format_style,
-                "model_used": "Gemini-2.0-Flash",
+                "model_used": "NVIDIA-Llama-3.3",
                 "follow_up_suggestions": follow_ups,
                 "timestamp": now.isoformat(),
             }
@@ -4380,7 +4346,7 @@ def _agent_llm_template(
     language: str = "en",
     format_style: str = "whatsapp",
 ) -> dict[str, Any]:
-    """Template-based fallback for _agent_llm when Gemini is unavailable."""
+    """Template-based fallback for _agent_llm when NVIDIA is unavailable."""
     now = datetime.now(timezone.utc)
     sections = []
 
@@ -4654,7 +4620,7 @@ async def agent_memory_get(farmer_id: str, db: AsyncSession = Depends(get_db)):
 async def agent_llm(request: LLMRequest):
     """
     LLM Agent: Generate WhatsApp-style summaries in local language
-    using Gemini Flash (with template fallback).
+    using NVIDIA NIM (with template fallback).
     """
     result = await _agent_llm(
         disease_info=request.disease_info,

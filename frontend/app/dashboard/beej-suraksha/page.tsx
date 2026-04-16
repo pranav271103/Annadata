@@ -109,6 +109,27 @@ export default function BeejSurakshaPage() {
                   Verify
                 </Button>
               </div>
+              {/* Demo QR IDs for testing */}
+              <div className="mt-4 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-background)] p-3">
+                <p className="text-xs font-medium text-[var(--color-text-muted)] mb-2">
+                  Demo QR Codes (click to verify):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["BS-DEMO-2025"].map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => { setQrCodeId(id); setTimeout(() => { const btn = document.querySelector('[data-verify-btn]') as HTMLButtonElement; btn?.click(); }, 100); }}
+                      className="rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-mono text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 transition-colors cursor-pointer"
+                    >
+                      {id}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[10px] text-[var(--color-text-muted)]">
+                  Use these IDs for testing. Register new batches via POST /seed/register.
+                </p>
+              </div>
             </CardContent>
           </Card>
 

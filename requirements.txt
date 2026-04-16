@@ -1,6 +1,6 @@
 # ============================================================
-# Annadata OS - Root Python Dependencies
-# Shared across all services
+# Annadata OS - Root Python Dependencies (Universal Mode)
+# Supports both Docker (Postgres/Redis) and Local (SQLite/No-Docker)
 # ============================================================
 
 # Web Framework
@@ -13,6 +13,7 @@ pydantic-settings>=2.0.0
 sqlalchemy[asyncio]>=2.0.0
 asyncpg>=0.29.0
 psycopg2-binary>=2.9.0
+aiosqlite>=0.19.0              # Required for SQLite mode
 alembic>=1.13.0
 
 # Auth
@@ -33,7 +34,11 @@ httpx>=0.27.0
 # Rate Limiting
 slowapi>=0.1.9
 
-# Data / ML (shared)
+# Data / ML
 pandas>=2.1.0
 numpy>=1.24.0
 scikit-learn>=1.3.0
+
+# AI & Serial
+openai>=1.0.0
+pyserial>=3.5

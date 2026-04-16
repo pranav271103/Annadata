@@ -88,5 +88,12 @@ frontend/tsconfig.tsbuildinfo
 node_modules/
 .next/
 
-# Database backups
+# Database
+annadata.db
 backups/
+
+# Temp files
+*.tmp
+*.tmp.*
+prob.txt
+msp_mitra/test_output.txt

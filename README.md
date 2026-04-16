@@ -15,78 +15,69 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://docs.docker.com/compose/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> Empowering Indian farmers with quantum-aware yield forecasting, market intelligence, soil analysis, crop protection, smart irrigation, and AI-powered decision support.
+> Empowering Indian farmers with high-fidelity AI advisory, market intelligence, soil analysis, and gamified agricultural education.
 
-Annadata OS is a multi-service AI agriculture platform where each service runs as an independent FastAPI microservice sharing PostgreSQL and Redis, with a unified Next.js dashboard frontend. The platform integrates quantum computing, classical ML, and real-time data to address food security, sustainability, and resource optimization.
+Annadata OS is a **Multi-Service AI Agriculture Platform** featuring 12 independent FastAPI microservices. The platform now supports a **Universal "Zero-Install" mode** (SQLite-based) for instant local development alongside its enterprise-grade Docker stack. It integrates NVIDIA NIM (Llama 3.3), Quantum-aware yield forecasting, and a Duolingo-style gamification engine.
 
 ## Platform Services
 
-| # | Service | Port | Description | Endpoints |
-|---|---------|------|-------------|-----------|
-| 1 | **MSP Mitra** | 8001 | Price intelligence, market analytics, nearest mandis, price alerts (1.1M+ AgMarkNet records) | 20 |
-| 2 | **SoilScan AI** | 8002 | Soil health analysis, photo-based analysis, quantum ML correlation, batch analysis | 8 |
-| 3 | **Fasal Rakshak** | 8003 | Crop disease detection, pesticide shop finder, protein engineering linkage | 8 |
-| 4 | **Jal Shakti** | 8004 | Smart irrigation (Penman-Monteith), IoT valve control, quantum multi-field optimization | 9 |
-| 5 | **Harvest Shakti** | 8005 | AGRI-MAA Decision Support System: crop recommendation, fertilizer advisory, irrigation, pest alerts, rotation | 12 |
-| 6 | **Kisaan Sahayak** | 8006 | Multi-agent AI assistant: vision, verification, weather, market, memory, LLM summary, full pipeline | 14 |
-| 7 | **Protein Engineering** | 8007 | Protein trait-to-gene mapping, climate crop profiles, trait engineering pipeline | 8 |
-| 8 | **Kisan Credit Score** | 8008 | Farmer credit scoring, batch calculation, regional risk assessment | 7 |
-| 9 | **Harvest-to-Cart** | 8009 | Cold chain logistics, demand prediction, quantum-optimized routing, farmer-retailer matching | 9 |
-| 10 | **Beej Suraksha** | 8010 | Seed verification, QR tracking, community reporting, blockchain supply chain traceability | 12 |
-| 11 | **Mausam Chakra** | 8011 | Hyper-local weather, satellite data fusion, quantum VQR prediction, agricultural advisory | 12 |
-| | **Frontend** | 3000 | Unified Next.js dashboard with 16 routes | |
-| | **Total** | | | **119** |
+| # | Service | Port | Description | Status |
+|---|---------|------|-------------|--------|
+| 1 | **MSP Mitra** | 8001 | Price intelligence, market analytics, alerts (1.1M+ AgMarkNet records) | Real Data |
+| 2 | **SoilScan AI** | 8002 | Soil health analysis, photo recognition, and Kalman-fused correlations | ML Core |
+| 3 | **Fasal Rakshak** | 8003 | Crop disease detection and pesticide advisory linkage | Pipeline |
+| 4 | **Jal Shakti** | 8004 | Smart irrigation (Penman-Monteith) and IoT valve management | Real Math |
+| 5 | **Harvest Shakti** | 8005 | AGRI-MAA Decision Support: crop recommendation & fertilizer advisory | Logic-based |
+| 6 | **Kisaan Sahayak** | 8006 | **NVIDIA NIM Powered** Multi-agent assistant: vision, market, weather | AI-First |
+| 7 | **Protein Engineering** | 8007 | Climate-aware trait mapping and genomic crop performance analysis | Real Data |
+| 8 | **Kisan Credit Score** | 8008 | Formula-based farmer credit scoring and regional risk assessment | Analytical |
+| 9 | **Harvest-to-Cart** | 8009 | Cold chain logistics, demand prediction, and route optimization | Real Alg. |
+| 10 | **Beej Suraksha** | 8010 | Seed verification, QR tracking, and SHA-256 blockchain traceability | Functional |
+| 11 | **Mausam Chakra** | 8011 | Hyper-local weather intelligence & Kalman-filter satellite fusion | Real Math |
+| 12 | **Gamification** | 8012 | Duolingo-style XP, levels, streaks, and farming quests | **New** |
+| | **Frontend** | 3000 | Unified Next.js 16 Dashboard with 18+ modular routes | Active |
+
 
 ## Architecture
 
 ```
 Annadata OS
-├── services/                  # Microservices (11 independent FastAPI apps)
-│   ├── shared/                # Shared infrastructure
-│   │   ├── config.py          # Centralized settings (Pydantic)
-│   │   ├── db/                # Async SQLAlchemy 2.0 + PostgreSQL
-│   │   ├── auth/              # JWT auth (register/login/roles)
-│   │   └── celery_app/        # Background task queue (Redis broker)
+├── services/                  # Microservices (12 independent FastAPI apps)
+│   ├── shared/                # Shared infrastructure (Pydantic Settings, Auth, DB)
 │   ├── msp_mitra/             # Price intelligence service
 │   ├── soilscan_ai/           # Soil analysis service
 │   ├── fasal_rakshak/         # Crop protection service
 │   ├── jal_shakti/            # Water management service
 │   ├── harvest_shakti/        # AGRI-MAA Decision Support System
-│   ├── kisaan_sahayak/        # Multi-agent AI assistant
+│   ├── kisaan_sahayak/        # Multi-agent NVIDIA NIM AI assistant
+│   ├── gamification/          # New! XP, levels, and educational quests
 │   ├── protein_engineering/   # Protein engineering service
 │   ├── kisan_credit/          # Credit scoring service
 │   ├── harvest_to_cart/       # Cold chain logistics service
 │   ├── beej_suraksha/         # Seed verification service
 │   └── mausam_chakra/         # Weather intelligence service
-├── frontend/                  # Unified Next.js 16 dashboard
-│   ├── app/                   # App Router pages (16 routes)
+├── frontend/                  # Modular Next.js 16 dashboard
+│   ├── app/                   # App Router (Dashboard, Game, Digital-Twin)
 │   ├── components/            # UI + layout components
 │   ├── lib/                   # API client, utils, query client
 │   └── store/                 # Zustand state (auth, services)
-├── infra/                     # Docker templates
-├── src/                       # Core ML/Quantum pipeline
-│   ├── models/                # Classical + Quantum ML models
-│   ├── quantum/               # Quantum strategies (Qiskit)
-│   ├── data_pipeline/         # ETL + feature engineering
-│   └── api/                   # Core FastAPI app
-├── msp_mitra/                 # MSP Mitra legacy backend + data
-├── protein_engineering/       # Protein Engineering sub-app
-├── data/                      # Raw + processed datasets
-├── tests/                     # Unit + integration tests (55 tests)
-├── docker-compose.yml         # Full orchestration
-├── .env.example               # Environment variables template
-└── start.sh                   # Dev start script
+├── src/                       # Core ML/Quantum pipeline (Models, Quantum, Data)
+├── start-all.bat              # One-click startup for Windows (SQLite mode)
+├── orchestrator.py            # Unified service orchestrator
+├── annadata.db                # Auto-generated SQLite database
+└── .env                       # Environment configuration
 ```
 
 ## Tech Stack
 
 ### Backend
-- **FastAPI** (Python 3.11) with Pydantic v2 validation
-- **SQLAlchemy 2.0** async ORM with **asyncpg** driver
-- **PostgreSQL 15** shared database
+- **FastAPI** (Python 3.11) with Pydantic v2
+- **SQLAlchemy 2.0** with **aiosqlite** (local) or **asyncpg** (Docker)
+- **NVIDIA NIM** (Llama 3.3 70B) for high-fidelity reasoning
+- **PostgreSQL 15** / **SQLite** dual-compatibility
 - **Redis 7** for caching + Celery broker
 - **Celery** for background ML tasks
-- **JWT authentication** with role-based access (farmer/trader/researcher/admin)
+- **JWT authentication** with role-based access
 
 ### Frontend
 - **Next.js 16** (App Router) with **React 19**
@@ -102,39 +93,49 @@ Annadata OS
 - **GitHub Actions** CI pipeline
 - **Kubernetes** production-ready path
 
-### ML / Quantum
-- 6 trained classical models (Linear Regression, Random Forest, SVR)
-- Quantum VQR model (Qiskit 1.4.5, 4 qubits, COBYLA optimizer)
-- 3 quantum strategies for yield forecasting
-- 40+ engineered weather + crop features
-- Simulated quantum QAOA for multi-field irrigation optimization
-- SHA-256 blockchain for seed supply chain verification
+### ML / AI / Quantum
+- **NVIDIA NIM Integration**: Llama 3.3 70B powered RAG pipeline for agricultural advisory.
+- **Real-time Price Forecasting**: Facebook Prophet ensemble models with 1.1M AgMarkNet records.
+- **Quantum Yield Optimization**: Variational Quantum Regressor (VQR) for local yield prediction.
+- **Kalman Filter Fusion**: Multi-source satellite and ground sensor data synchronization.
+- **Gamification Logic**: Deterministic quest engine with user-retention algorithms.
 
-## Quick Start
+## Latest Project Outcomes
 
-```bash
-# Clone
+- **Zero-Install Universal Mode**: Fully portable architecture with auto-switching SQLite support.
+- **AI-First Reengineering**: Transitioned from rule-based chat to high-fidelity NVIDIA NIM advisory.
+- **Unified Service Orchestration**: Centralized management of 12 microservices via a single command.
+- **Modular Dashboard 2.0**: 18+ data-rich routes featuring Recharts, Leaflet maps, and GSAP animations.
+- **Enterprise Tiering**: Production-ready subscription model and service access control.
+
+## Quick Start (Universal Mode)
+
+The platform now features a **One-Click Universal Start** script that automatically handles environment setup, dependencies, and service orchestration in SQLite mode.
+
+### Windows
+```powershell
+# Clone and Enter
 git clone https://github.com/R-Meister/Annadata.git
 cd Annadata
 
-# Copy environment config
+# Start everything (SQLite + Local venv)
+.\start-all.bat
+```
+
+### Manual / Professional (Postgres + Redis)
+```bash
+# Copy and edit environment config
 cp .env.example .env
 
-# Start everything with Docker
-./start.sh
-
-# Or start just infrastructure
-./start.sh infra
-
-# Or run services locally
-./start.sh local
+# Start with Docker
+docker compose up --build
 ```
 
 Visit:
-- **Dashboard**: http://localhost:3000
+- **Dashboard**: http://localhost:3000/dashboard
+- **Gamified Education**: http://localhost:3000/game
 - **MSP Mitra API**: http://localhost:8001/docs
-- **Any Service**: http://localhost:{port}/docs
-- **Traefik Dashboard**: http://localhost:8080 (with `--profile gateway`)
+- **Kisaan Sahayak API**: http://localhost:8006/docs
 
 For detailed setup instructions, see **[run.md](run.md)**.
 
