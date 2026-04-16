@@ -2527,19 +2527,37 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     response_text = result["text"] if result else _format_general_response(request.message)["text"]
 
     if _NVIDIA_AVAILABLE:
-        # AI-First Path: Always try to use NVIDIA NIM for high-quality advisory
-        nvidia_response = await _call_nvidia(
-            user_message=request.message,
-            kb_context=combined_context,
-            history=history,
-            language=request.language,
-        )
-        if nvidia_response:
-            response_text = nvidia_response
-            model_used = "NVIDIA-Llama-3.3-AI-First"
-        if nvidia_response:
-            response_text = nvidia_response
-            model_used = "NVIDIA-Llama-3.3"
+        # Step 4: Call the Centralized Brain Service (Agentic Orchestrator)
+        try:
+            async with httpx.AsyncClient() as client:
+                brain_resp = await client.post(
+                    "http://localhost:8013/chat",
+                    json={
+                        "message": request.message,
+                        "session_id": session_id,
+                        "language": request.language,
+                        "latitude": request.latitude,
+                        "longitude": request.longitude
+                    },
+                    timeout=35.0
+                )
+                if brain_resp.status_code == 200:
+                    data = brain_resp.json()
+                    response_text = data["response"]
+                    model_used = data["model"]
+        except Exception as e:
+            logger.error(f"Failed to connect to Brain Service: {e}. Falling back to local NIM.")
+            # Fallback to local call if Brain is down
+            nvidia_response = await _call_nvidia(
+                user_message=request.message,
+                kb_context=combined_context,
+                history=history,
+                language=request.language,
+            )
+            if nvidia_response:
+                response_text = nvidia_response
+                model_used = "NVIDIA-Llama-3.3-Local-Fallback"
+
 
     await _add_to_session(db, session_id, "assistant", response_text)
 
@@ -2558,6 +2576,15 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
 
 # ------------------------------------------------------------------
 # GET /schemes
+@app.get("/dossier/{crop}")
+async def get_crop_dossier(crop: str):
+    """Internal endpoint for Brain Service to get grounding context."""
+    crop_lower = crop.lower().strip()
+    crop_lower = _CROP_ALIASES.get(crop_lower, crop_lower)
+    context = _get_crop_grounding_context(crop_lower)
+    return {"crop": crop_lower, "context": context}
+
+
 # ------------------------------------------------------------------
 
 
