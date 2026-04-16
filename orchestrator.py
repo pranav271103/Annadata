@@ -39,7 +39,9 @@ SERVICES = [
     ("beej_suraksha",       "services.beej_suraksha.app:app",        8010),
     ("mausam_chakra",       "services.mausam_chakra.app:app",        8011),
     ("gamification",        "services.gamification.app:app",          8012),
+    ("brain_service",       "services.brain_service.app:app",         8013),
 ]
+
 
 # Windows-compatible ANSI colours
 COLORS = [
