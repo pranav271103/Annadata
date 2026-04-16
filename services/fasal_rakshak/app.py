@@ -1,5 +1,6 @@
 """Fasal Rakshak - Crop protection and disease detection service."""
 
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
@@ -18,6 +19,10 @@ from services.shared.auth.router import router as auth_router, setup_rate_limiti
 from services.shared.config import settings
 from services.shared.db.session import close_db, init_db, get_db
 from services.shared.db.models import DiseaseDetection
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # Knowledge Base

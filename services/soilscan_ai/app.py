@@ -9,6 +9,8 @@ without an external database.
 """
 
 from __future__ import annotations
+import logging
+
 
 import uuid
 from contextlib import asynccontextmanager
@@ -72,6 +74,11 @@ _FERTILITY_THRESHOLDS: list[tuple[float, str]] = [
 # Pydantic request / response schemas
 # ===================================================================
 
+
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class SoilSampleRequest(BaseModel):
     """Input payload for a single soil sample analysis."""

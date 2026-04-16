@@ -11,6 +11,8 @@ retrieved without an external database.
 """
 
 from __future__ import annotations
+import logging
+
 
 import uuid
 from collections import Counter
@@ -202,6 +204,11 @@ _INTEREST_RATE: dict[str, float] = {
 # Pydantic request / response schemas
 # ===================================================================
 
+
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class CreditScoreRequest(BaseModel):
     """Input payload for a single farmer credit score calculation."""
