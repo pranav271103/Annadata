@@ -18,6 +18,7 @@ Endpoints:
   GET  /auth/me                                    - Current user info
 """
 
+import logging
 import os
 import sys
 from contextlib import asynccontextmanager
@@ -63,6 +64,11 @@ async def lifespan(application: FastAPI):
 # ============================================================
 # FastAPI App
 # ============================================================
+
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Protein Engineering Service - Annadata OS",

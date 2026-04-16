@@ -2323,8 +2323,8 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
                 raise ValueError("missing last_ingested_at")
             if (now - last_time).total_seconds() < 3600:
                 active_stations += 1
-        except (KeyError, ValueError):
-            pass
+        except (KeyError, ValueError) as e:
+            logger.warning(f"Error parsing station {station.station_id}: {e}")
 
     stats_result = await db.execute(select(ForecastStats).where(ForecastStats.id == 1))
     stats = stats_result.scalar_one_or_none()

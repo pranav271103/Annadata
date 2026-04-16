@@ -9,6 +9,7 @@ Implements:
 - In-memory plot registration
 """
 
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, date, timedelta, timezone
 from enum import Enum
@@ -135,6 +136,11 @@ MONTHLY_EFFECTIVE_RAINFALL_MM_PER_DAY: dict[int, float] = {
 # Enums
 # ============================================================
 
+
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class GrowthStage(str, Enum):
     initial = "initial"

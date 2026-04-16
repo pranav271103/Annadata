@@ -4,6 +4,7 @@ Maps cold storage facilities, predicts city demand, connects farmers to
 retailers, and optimizes logistics for perishable agricultural produce.
 """
 
+import logging
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
@@ -641,6 +642,11 @@ RETAILER_DB: list[dict] = [
 # Pydantic models
 # ---------------------------------------------------------------------------
 
+
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class FindNearestRequest(BaseModel):
     latitude: float = Field(

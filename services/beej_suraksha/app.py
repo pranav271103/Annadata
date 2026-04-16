@@ -13,6 +13,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.orm.attributes import flag_modified
+import logging
 from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +21,10 @@ from services.shared.auth.router import router as auth_router, setup_rate_limiti
 from services.shared.config import settings
 from services.shared.db.models import CommunityReport, SeedBatch, SeedVerification
 from services.shared.db.session import close_db, get_db, init_db
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # Knowledge Base — Genuine Seed Characteristics
@@ -850,7 +855,9 @@ async def get_community_reports(
             min_dt = datetime.fromisoformat(min_date)
             results_query = results_query.where(CommunityReport.submitted_at >= min_dt)
         except ValueError:
+            logger.warning(f"Invalid min_date format: {min_date}")
             pass
+
 
     results = [
         report.to_dict() for report in (await db.execute(results_query)).scalars().all()

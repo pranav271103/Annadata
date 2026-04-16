@@ -13,6 +13,7 @@ Features:
   - AI chatbot (Gemini-style) for farmer queries
 """
 
+import logging
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
@@ -126,6 +127,11 @@ CROP_YIELD_DATA: dict[str, dict] = {
 # Enums & Pydantic models
 # ---------------------------------------------------------------------------
 
+
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class IrrigationType(str, Enum):
     drip = "drip"
