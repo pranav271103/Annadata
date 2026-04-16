@@ -445,6 +445,15 @@ class ChatMessage(Base):
 
     session = relationship("ChatSession", back_populates="messages")
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "session_id": self.session_id,
+            "role": self.role,
+            "content": self.content,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
 
 class FarmerInteractionRecord(Base):
     """Farmer interaction memory for pattern analysis."""
