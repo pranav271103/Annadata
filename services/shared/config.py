@@ -20,7 +20,7 @@ class SharedSettings(BaseSettings):
     APP_NAME: str = "Annadata"
     APP_ENV: str = "development"
     DEBUG: bool = True
-    SECRET_KEY: str = "insecure-default-key-change-in-production"
+    SECRET_KEY: str = "change-in-production-via-env"
 
     # Caching
     USE_SQLITE: bool = False  # Set to True for zero-install mode
@@ -41,7 +41,7 @@ class SharedSettings(BaseSettings):
     NVIDIA_API_KEY: Optional[str] = None
 
     # JWT
-    JWT_SECRET_KEY: str = "insecure-jwt-secret-change-in-production"
+    JWT_SECRET_KEY: str = "change-in-production-via-env"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
 
