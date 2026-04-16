@@ -37,17 +37,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Create virtual environment if it doesn't exist
-if not exist "venv" (
-    echo [SETUP] Creating Python virtual environment...
-    python -m venv venv
-)
-
-REM Activate virtual environment
-echo [SETUP] Activating Python virtual environment...
-call venv\Scripts\activate.bat
-
-REM Install/Verify Python dependencies
+REM Install/Verify Python dependencies (Global Environment)
 echo [SETUP] Verifying Python dependencies... this may take a minute
 if exist "requirements.txt" (
     pip install -r requirements.txt
@@ -70,7 +60,7 @@ echo [START] Launching all services in SQLite mode...
 echo.
 
 REM Start the orchestrator (with USE_SQLITE=True via orchestration)
-call venv\Scripts\activate.bat 2>nul
 python orchestrator.py
 
 pause
+
