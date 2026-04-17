@@ -37,7 +37,9 @@ const SERVICE_ENTRIES: { key: string; name: string; url: string }[] = [
   { key: "harvestToCart", name: "Harvest-to-Cart", url: API_URLS.harvestToCart },
   { key: "beejSuraksha", name: "Beej Suraksha", url: API_URLS.beejSuraksha },
   { key: "mausamChakra", name: "Mausam Chakra", url: API_URLS.mausamChakra },
+  { key: "brainService", name: "Annadata Brain", url: API_URLS.brainService },
 ];
+
 
 function buildInitialServices(): Record<string, ServiceStatus> {
   const map: Record<string, ServiceStatus> = {};

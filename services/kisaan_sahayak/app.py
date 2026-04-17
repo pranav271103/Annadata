@@ -2531,8 +2531,9 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         try:
             async with httpx.AsyncClient() as client:
                 brain_resp = await client.post(
-                    "http://localhost:8013/chat",
+                    f"{settings.BRAIN_SERVICE_URL}/chat",
                     json={
+
                         "message": request.message,
                         "session_id": session_id,
                         "language": request.language,

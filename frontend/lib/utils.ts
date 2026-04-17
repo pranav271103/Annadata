@@ -60,6 +60,8 @@ export const API_URLS = {
     process.env.NEXT_PUBLIC_MAUSAM_CHAKRA_URL || "http://localhost:8011",
   gamification:
     process.env.NEXT_PUBLIC_GAMIFICATION_URL || "http://localhost:8012",
+  brainService:
+    process.env.NEXT_PUBLIC_BRAIN_SERVICE_URL || "http://localhost:8013",
 } as const;
 
 /**
@@ -91,4 +93,6 @@ export const API_PREFIXES = {
     (process.env.NEXT_PUBLIC_API_BASE_URL || "") + "/api/mausam-chakra",
   gamification:
     (process.env.NEXT_PUBLIC_API_BASE_URL || "") + "/api/gamification",
+  brainService:
+    (process.env.NEXT_PUBLIC_API_BASE_URL || "") + "/api/brain-service",
 } as const;

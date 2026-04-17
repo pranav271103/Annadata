@@ -40,6 +40,21 @@ class SharedSettings(BaseSettings):
     # AI
     NVIDIA_API_KEY: Optional[str] = None
 
+    # Service URLs (defaults for local dev)
+    MSP_MITRA_URL: str = "http://localhost:8001"
+    SOILSCAN_AI_URL: str = "http://localhost:8002"
+    FASAL_RAKSHAK_URL: str = "http://localhost:8003"
+    JAL_SHAKTI_URL: str = "http://localhost:8004"
+    HARVEST_SHAKTI_URL: str = "http://localhost:8005"
+    KISAAN_SAHAYAK_URL: str = "http://localhost:8006"
+    PROTEIN_ENGINEERING_URL: str = "http://localhost:8007"
+    KISAN_CREDIT_URL: str = "http://localhost:8008"
+    HARVEST_TO_CART_URL: str = "http://localhost:8009"
+    BEEJ_SURAKSHA_URL: str = "http://localhost:8010"
+    MAUSAM_CHAKRA_URL: str = "http://localhost:8011"
+    GAMIFICATION_URL: str = "http://localhost:8012"
+    BRAIN_SERVICE_URL: str = "http://localhost:8013"
+
     # JWT
     JWT_SECRET_KEY: str = "change-in-production-via-env"
     JWT_ALGORITHM: str = "HS256"

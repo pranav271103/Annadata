@@ -58,8 +58,14 @@ const nextConfig: NextConfig = {
       // Gamification service
       {
         source: "/api/gamification/:path*",
-        destination: `${process.env.NEXT_PUBLIC_GAMIFICATION_URL || "http://gamification:8012"}/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_GAMIFICATION_URL || "http://localhost:8012"}/:path*`,
       },
+      // Brain Service (Agentic Orchestrator)
+      {
+        source: "/api/brain-service/:path*",
+        destination: `${process.env.NEXT_PUBLIC_BRAIN_SERVICE_URL || "http://localhost:8013"}/:path*`,
+      },
+
     ];
   },
 };

@@ -20,16 +20,16 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-# Service Registry
+# Service Registry (Injected from SharedSettings)
 SERVICES = {
-    "msp": "http://localhost:8001",
-    "soil": "http://localhost:8002",
-    "weather": "http://localhost:8011",
-    "kisaan": "http://localhost:8006",
+    "msp": settings.MSP_MITRA_URL,
+    "soil": settings.SOILSCAN_AI_URL,
+    "weather": settings.MAUSAM_CHAKRA_URL,
+    "kisaan": settings.KISAAN_SAHAYAK_URL,
 }
 
 # NVIDIA Configuration
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+NVIDIA_API_KEY = settings.NVIDIA_API_KEY
 NVIDIA_ENDPOINT = "https://integrate.api.nvidia.com/v1"
 
 

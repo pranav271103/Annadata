@@ -859,6 +859,59 @@ def _predict_from_features(features: dict) -> dict[str, float]:
     }
 
 
+async def _analyze_image_with_nvidia(image_base64: str) -> dict[str, float]:
+    """Call NVIDIA NIM Llama-3.2-11b-vision-instruct to analyze soil photo."""
+    api_key = settings.NVIDIA_API_KEY
+    if not api_key:
+        raise ValueError("NVIDIA_API_KEY not configured for vision analysis")
+
+    url = "https://integrate.api.nvidia.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    # Clean base64 if it includes the data:image prefix
+    if "," in image_base64:
+        image_base64 = image_base64.split(",")[1]
+
+    payload = {
+        "model": "nvidia/llama-3.2-11b-vision-instruct",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            "You are an expert agronomist. Analyze this soil photograph and "
+                            "estimate the following six parameters. Return the result strictly as valid JSON "
+                            "with these keys: ph (0-14), nitrogen_ppm (0-200), phosphorus_ppm (0-100), "
+                            "potassium_ppm (0-400), organic_carbon_pct (0-5), moisture_pct (0-100). "
+                            "If you cannot see the soil clearly, provide your best estimate for a standard loamy soil."
+                        ),
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{image_base64}"},
+                    },
+                ],
+            }
+        ],
+        "max_tokens": 512,
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+    }
+
+    async with _httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+        response.raise_for_status()
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+        import json
+        return json.loads(content)
+
+
 async def _run_photo_analysis(
     req: SoilPhotoRequest, db: AsyncSession
 ) -> SoilPhotoResponse:
@@ -866,10 +919,32 @@ async def _run_photo_analysis(
     analysis_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
-    features = _extract_image_features(req)
-    predicted = _predict_from_features(features)
+    # 1. Extract image features (Real AI or Simulation)
+    predicted = None
+    features = {}
 
-    # Reuse the existing scoring engine
+    if req.image_base64:
+        try:
+            # Real AI Vision analysis (Production Mode)
+            vision_result = await _analyze_image_with_nvidia(req.image_base64)
+            predicted = {
+                "ph": vision_result.get("ph", 7.0),
+                "nitrogen_ppm": vision_result.get("nitrogen_ppm", 50.0),
+                "phosphorus_ppm": vision_result.get("phosphorus_ppm", 30.0),
+                "potassium_ppm": vision_result.get("potassium_ppm", 150.0),
+                "organic_carbon_pct": vision_result.get("organic_carbon_pct", 0.8),
+                "moisture_pct": vision_result.get("moisture_pct", 30.0),
+            }
+            features = {"source": "nvidia_vision", "model": "llama-3.2-11b-instruct"}
+        except Exception as e:
+            logger.warning(f"NVIDIA Vision analysis failed, falling back to simulation: {e}")
+
+    if predicted is None:
+        # Simulation Mode (Legacy HSV Extraction)
+        features = _extract_image_features(req)
+        predicted = _predict_from_features(features)
+
+    # 2. Reuse the existing scoring engine
     keys = [
         "ph",
         "nitrogen_ppm",
@@ -881,6 +956,7 @@ async def _run_photo_analysis(
     scores: dict[str, float] = {}
     for key in keys:
         low, high = _OPTIMAL_RANGES[key]
+        # map key 'ph' to 'ph_level' logic if needed, but here they match
         scores[key] = _range_score(predicted[key], low, high)
 
     weights = np.array([_WEIGHTS[k] for k in keys])
@@ -889,7 +965,7 @@ async def _run_photo_analysis(
     health_score = round(np.clip(health_score, 0.0, 100.0), 2)
     fertility_class = _classify_fertility(health_score)
 
-    # Build recommendations via a synthetic SoilSampleRequest
+    # 3. Build recommendations via a synthetic SoilSampleRequest
     synthetic_sample = SoilSampleRequest(
         plot_id=req.plot_id,
         latitude=req.latitude,
@@ -904,19 +980,11 @@ async def _run_photo_analysis(
     )
     recommendations = _build_recommendations(synthetic_sample)
 
-    # Confidence is higher when explicit metadata is provided
-    has_explicit_hsv = (
-        req.hue is not None and req.saturation is not None and req.value is not None
-    )
-    has_texture = req.texture is not None and req.texture in _TEXTURE_PROFILES
-    confidence = 0.55
-    if has_explicit_hsv:
-        confidence += 0.20
-    if has_texture:
-        confidence += 0.15
-    if req.region in _REGION_BASELINES and req.region != "unknown":
-        confidence += 0.05
-    confidence = round(min(confidence, 0.98), 2)
+    # 4. Confidence scoring
+    confidence = 0.85 if features.get("source") == "nvidia_vision" else 0.55
+    if req.texture is not None:
+        confidence += 0.10
+    confidence = round(min(confidence, 0.99), 2)
 
     result = SoilPhotoResponse(
         analysis_id=analysis_id,
