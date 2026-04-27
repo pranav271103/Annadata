@@ -9,16 +9,20 @@ from fastapi import FastAPI, HTTPException, Request, Query
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-
 from dotenv import load_dotenv
 
 # Configure logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
 load_dotenv()
 
+# Add root to path for shared modules
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if ROOT not in sys.path:
+    sys.path.append(ROOT)
+
+from services.shared.config import settings
 
 # Service Registry (Injected from SharedSettings)
 SERVICES = {
@@ -31,11 +35,6 @@ SERVICES = {
 # NVIDIA Configuration
 NVIDIA_API_KEY = settings.NVIDIA_API_KEY
 NVIDIA_ENDPOINT = "https://integrate.api.nvidia.com/v1"
-
-
-# Add root to path for shared modules
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(ROOT)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -69,25 +68,36 @@ async def get_market_context(crop: str) -> str:
     """Fetch market prices and predictions for a crop."""
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{SERVICES['msp']}/predict/{crop}", timeout=5.0)
+            # Correct path for msp_mitra: needs commodity and state
+            # Using 'Rajasthan' as default state for prediction context
+            resp = await client.get(f"{SERVICES['msp']}/predict?commodity={crop}&state=Rajasthan", timeout=5.0)
             if resp.status_code == 200:
                 data = resp.json()
-                return f"Market Data for {crop}: Final Price: Rs {data.get('final_price', 'N/A')}, Confidence: {data.get('confidence', 'N/A')}"
+                # Handle list of forecasts or single object
+                if isinstance(data, list) and len(data) > 0:
+                    data = data[0]
+                price = data.get("predicted_price") or data.get("price") or "N/A"
+                conf = data.get("confidence") or "High"
+                return f"Market Data for {crop}: Estimated Price: Rs {price}, Confidence: {conf}"
     except Exception as e:
-        logger.error(f"Error fetching market data: {e}")
+        logger.error(f"Error fetching market data for {crop}: {e}")
     return ""
 
 async def get_soil_context(latitude: float, longitude: float) -> str:
     """Fetch latest soil health for a location."""
     try:
         async with httpx.AsyncClient() as client:
-            # Placeholder: In production, we'd lookup by lat/long or user_id
+            # soilscan_ai returns HistoryResponse { analyses: [] }
             resp = await client.get(f"{SERVICES['soil']}/history", timeout=5.0)
             if resp.status_code == 200:
                 data = resp.json()
-                if data:
-                    latest = data[0]
+                analyses = data.get("analyses", [])
+                if analyses:
+                    latest = analyses[0]
                     return f"Soil Health: Score {latest.get('health_score', 'N/A')}, Fertility: {latest.get('fertility_status', 'N/A')}"
+                elif isinstance(data, list) and len(data) > 0:
+                    latest = data[0]
+                    return f"Soil Health: Score {latest.get('health_score', 'N/A')}"
     except Exception as e:
         logger.error(f"Error fetching soil data: {e}")
     return ""
@@ -96,10 +106,11 @@ async def get_weather_context(lat: str, lon: str) -> str:
     """Fetch current weather and advisory."""
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{SERVICES['weather']}/current?lat={lat}&lon={lon}", timeout=5.0)
+            # mausam_chakra uses village codes. Defaulting to Ludhiana for general context.
+            resp = await client.get(f"{SERVICES['weather']}/weather/current/PB-LDH-001", timeout=5.0)
             if resp.status_code == 200:
                 data = resp.json()
-                return f"Weather: {data.get('temp_c', 'N/A')}°C, {data.get('condition', 'N/A')}. Advisory: {data.get('advisory', 'N/A')}"
+                return f"Weather: {data.get('temperature_c', 'N/A')}°C, {data.get('conditions', 'N/A')}. Advisory: {data.get('advisory', 'N/A')}"
     except Exception as e:
         logger.error(f"Error fetching weather data: {e}")
     return ""
@@ -144,9 +155,12 @@ async def call_nvidia_brain(user_message: str, context: str, history: List[Dict]
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 f"{NVIDIA_ENDPOINT}/chat/completions",
-                headers={"Authorization": f"Bearer {NVIDIA_API_KEY}"},
+                headers={
+                    "Authorization": f"Bearer {NVIDIA_API_KEY}",
+                    "Accept": "application/json",
+                },
                 json={
-                    "model": "nvidia/llama-3.1-405b", # Using high-fidelity model for the brain
+                    "model": "meta/llama-3.3-70b-instruct",
                     "messages": messages,
                     "temperature": 0.2,
                     "max_tokens": 1024,
@@ -155,8 +169,10 @@ async def call_nvidia_brain(user_message: str, context: str, history: List[Dict]
             )
             if resp.status_code == 200:
                 return resp.json()["choices"][0]["message"]["content"]
+            else:
+                logger.error(f"NVIDIA API responded with {resp.status_code}: {resp.text}")
     except Exception as e:
-        logger.error(f"NVIDIA Brain call failed: {e}")
+        logger.error(f"NVIDIA Brain call failed: {e}", exc_info=True)
     return "The brain is currently offline. Please try again later."
 
 
