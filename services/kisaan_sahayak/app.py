@@ -2523,8 +2523,8 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     combined_context = f"{dossier}\n\n### Current User Intent Grounding:\n{intent_context}"
 
     # ---- Step 3: AI-First Response Logic ----
-    model_used = "rule-based"
-    response_text = result["text"] if result else _format_general_response(request.message)["text"]
+    model_used = "dynamic-llm"
+    response_text = result["text"] if result else "I encountered an error querying the models. Pushing message into processing queue..."
 
     if _NVIDIA_AVAILABLE:
         # Step 4: Call the Centralized Brain Service (Agentic Orchestrator)
@@ -2568,8 +2568,8 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         language=request.language,
         intent_detected=intent,
         crop_detected=crop,
-        sources=[ChatSource(**s) for s in result["sources"]],
-        suggested_actions=result["actions"],
+        sources=[ChatSource(**s) for s in (result.get("sources", []) if result else [])],
+        suggested_actions=(result.get("actions", []) if result else []),
         model_used=model_used,
         responded_at=datetime.now(timezone.utc).isoformat(),
     )
