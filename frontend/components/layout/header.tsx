@@ -4,6 +4,7 @@ import { Search, Bell, Menu, User, ChevronDown, LogOut, Languages } from "lucide
 import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuthStore } from "@/store/auth-store";
 import { useLanguageStore } from "@/store/language-store";
 
@@ -69,6 +70,9 @@ export function Header({ onMenuClick }: HeaderProps) {
         <button className="rounded-md p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-border)] sm:hidden">
           <Search className="h-5 w-5" />
         </button>
+
+        {/* Theme toggle */}
+        <ThemeToggle />
 
         {/* Language toggle */}
         <button
