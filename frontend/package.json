@@ -18,6 +18,7 @@
     "lottie-react": "^2.4.0",
     "lucide-react": "^0.460.0",
     "next": "^16.0.0",
+    "next-themes": "^0.4.6",
     "puppeteer": "^24.40.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
