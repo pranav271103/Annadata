@@ -208,11 +208,9 @@ async def chat_orchestrator(request: ChatRequest):
     logger.info(f"Brain processing request: {request.message[:50]}...")
     
     # 1. Gather context from sub-services
-    # In a real agentic loop, we'd use an LLM to decide which tools to use.
-    # Here we perform proactive gathering for demonstration.
-    
-    # Placeholder for crop detection logic (could also be the LLM)
-    crop = "wheat" if "wheat" in request.message.lower() else "rice" if "rice" in request.message.lower() else None
+    KNOWN_CROPS = ["wheat", "rice", "maize", "sugarcane", "cotton", "mustard", "potato", "apple", "blueberry", "cherry", "grape", "orange", "peach", "pepper"]
+    msg_low = request.message.lower()
+    crop = next((c for c in KNOWN_CROPS if c in msg_low), None)
     
     context_parts = []
     
