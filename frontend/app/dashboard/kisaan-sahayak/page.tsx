@@ -201,8 +201,11 @@ export default function KisaanSahayakPage() {
     }
   }
 
-  // Web Speech API voice input (Hindi + English)
-  const speechSupported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  useEffect(() => {
+    setSpeechSupported(typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window));
+  }, []);
 
   function toggleVoice() {
     if (isListening && recognitionRef.current) {
