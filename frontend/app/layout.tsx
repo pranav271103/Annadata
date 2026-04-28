@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { QueryProvider } from "@/lib/query-client";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "Annadata OS - AI Agriculture Platform",
@@ -24,14 +25,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Annadata OS" />
       </head>
-      <body>
-        <QueryProvider>{children}</QueryProvider>
+      <body className="antialiased font-sans">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <QueryProvider>{children}</QueryProvider>
+        </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `
