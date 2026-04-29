@@ -10,7 +10,14 @@ from typing import List, Dict, Optional
 import pandas as pd
 import numpy as np
 import os
+import httpx
+import json
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
 # Initialize FastAPI
 app = FastAPI(
@@ -364,7 +371,7 @@ async def engineer_trait(config: TraitEngineering):
         'recommended_proteins': recommended_proteins,
         'climate_resilience_score': calculate_resilience_score(config, climate),
         'feasibility_score': calculate_feasibility(config),
-        'recommendations': generate_recommendations(config, climate, crop_perf)
+        'recommendations': await generate_recommendations(config, climate, crop_perf)
     }
 
 @app.get("/recommendations")
@@ -472,29 +479,82 @@ def generate_optimal_combination(climate: Dict, crop_perf: Dict) -> Dict:
         'rationale': 'Combination tailored to local climate and crop baseline performance'
     }
 
-def generate_recommendations(config: TraitEngineering, climate: Dict, crop_perf: Dict) -> List[str]:
-    """Generate actionable recommendations"""
-    recommendations = []
+async def generate_recommendations(config: TraitEngineering, climate: Dict, crop_perf: Dict) -> List[str]:
+    """Generate actionable recommendations using NVIDIA NIM LLM"""
     
+    # Fallback static recommendations
+    static_recs = []
     avg_temp = climate.get('avg_temperature', 25)
     avg_rain = climate.get('avg_rainfall', 1000)
     
     if config.drought_tolerance > 70 and avg_rain < 1000:
-        recommendations.append("High drought tolerance is critical for this region's low rainfall")
-    
+        static_recs.append("High drought tolerance is critical for this region's low rainfall")
     if config.heat_resistance > 70 and avg_temp > 28:
-        recommendations.append("Heat resistance engineering is optimal given rising temperatures")
-    
+        static_recs.append("Heat resistance engineering is optimal given rising temperatures")
     if config.disease_resistance > 70:
-        recommendations.append("Strong disease resistance recommended due to high fungal/bacterial pressure in monsoon regions")
-    
+        static_recs.append("Strong disease resistance recommended due to high fungal/bacterial pressure")
     if config.photosynthesis_efficiency > 80:
-        recommendations.append("Photosynthesis optimization will provide consistent yield improvements across all climates")
-    
+        static_recs.append("Photosynthesis optimization will provide consistent yield improvements")
     if config.nitrogen_efficiency > 70:
-        recommendations.append("Nitrogen efficiency reduces fertilizer dependency and environmental impact")
+        static_recs.append("Nitrogen efficiency reduces fertilizer dependency")
+
+    if not NVIDIA_API_KEY:
+        return static_recs if static_recs else ["General trait enhancement recommended for yield improvement"]
+
+    # Construct LLM Prompt
+    traits = []
+    if config.drought_tolerance > 0: traits.append(f"Drought Tolerance: {config.drought_tolerance}%")
+    if config.heat_resistance > 0: traits.append(f"Heat Resistance: {config.heat_resistance}%")
+    if config.disease_resistance > 0: traits.append(f"Disease Resistance: {config.disease_resistance}%")
+    if config.salinity_resistance > 0: traits.append(f"Salinity Resistance: {config.salinity_resistance}%")
+    if config.photosynthesis_efficiency > 0: traits.append(f"Photosynthesis Efficiency: {config.photosynthesis_efficiency}%")
+    if config.nitrogen_efficiency > 0: traits.append(f"Nitrogen Efficiency: {config.nitrogen_efficiency}%")
+
+    prompt = f"""
+    Crop: {config.crop}
+    Region: {config.region}
+    Season: {config.season}
+    Selected Traits: {', '.join(traits)}
+    Climate Context: Temp {avg_temp}°C, Rainfall {avg_rain}mm
     
-    return recommendations if recommendations else ["General trait enhancement recommended for yield improvement"]
+    Provide exactly 2-3 concise, professional implementation guidelines (one sentence each) for this specific crop engineering configuration. 
+    Focus on biological feasibility and regional impact. 
+    Do not include any introductory or concluding text.
+    Format as a JSON list of strings.
+    """
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {NVIDIA_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "meta/llama-3.1-8b-instruct",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.2,
+                    "max_tokens": 150,
+                },
+                timeout=5.0
+            )
+            
+            if response.status_code == 200:
+                content = response.json()['choices'][0]['message']['content'].strip()
+                # Clean up potential markdown formatting
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                
+                llm_recs = json.loads(content)
+                if isinstance(llm_recs, list) and len(llm_recs) > 0:
+                    return llm_recs
+    except Exception as e:
+        print(f"LLM Recommendation Error: {e}")
+    
+    return static_recs if static_recs else ["General trait enhancement recommended for yield improvement"]
 
 # ============================================================
 # Run Server
