@@ -76,8 +76,8 @@ export default function ProteinVisualization({
 
       container.innerHTML = '';
 
-      const config = { backgroundColor: 'transparent' };
-      const viewer = $3Dmol.createViewer(container, config);
+      const viewer = $3Dmol.createViewer(container, { backgroundColor: 'white' });
+      viewer.setBackgroundColor(0xffffff, 0); // Set background to transparent via alpha channel
 
       if (!viewer) {
         setError('Failed to create viewer');
