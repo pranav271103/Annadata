@@ -22,9 +22,15 @@ import logging
 import os
 import sys
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+import json
+import httpx as _httpx
 from pathlib import Path
 from typing import Dict, List, Optional
+from datetime import datetime, timezone
+from dotenv import load_dotenv
+
+# Load environment variables from root .env
+load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -372,38 +378,87 @@ def generate_optimal_combination(climate: Dict, crop_perf: Dict) -> Dict:
     }
 
 
-def generate_recommendations(
+async def generate_recommendations(
     config: TraitEngineering, climate: Dict, crop_perf: Dict
 ) -> List[str]:
+    """Generate actionable recommendations using NVIDIA NIM LLM"""
     recommendations: List[str] = []
     avg_temp = climate.get("avg_temperature", 25)
     avg_rain = climate.get("avg_rainfall", 1000)
 
+    # Base static recommendations as fallback
+    static_recs = []
     if config.drought_tolerance > 70 and avg_rain < 1000:
-        recommendations.append(
-            "High drought tolerance is critical for this region's low rainfall"
-        )
+        static_recs.append("High drought tolerance is critical for this region's low rainfall")
     if config.heat_resistance > 70 and avg_temp > 28:
-        recommendations.append(
-            "Heat resistance engineering is optimal given rising temperatures"
-        )
+        static_recs.append("Heat resistance engineering is optimal given rising temperatures")
     if config.disease_resistance > 70:
-        recommendations.append(
-            "Strong disease resistance recommended due to high fungal/bacterial "
-            "pressure in monsoon regions"
-        )
+        static_recs.append("Strong disease resistance recommended due to high fungal/bacterial pressure")
     if config.photosynthesis_efficiency > 80:
-        recommendations.append(
-            "Photosynthesis optimization will provide consistent yield "
-            "improvements across all climates"
-        )
+        static_recs.append("Photosynthesis optimization will provide consistent yield improvements")
     if config.nitrogen_efficiency > 70:
-        recommendations.append(
-            "Nitrogen efficiency reduces fertilizer dependency and environmental impact"
-        )
-    return recommendations or [
-        "General trait enhancement recommended for yield improvement"
-    ]
+        static_recs.append("Nitrogen efficiency reduces fertilizer dependency")
+
+    api_key = os.environ.get("NVIDIA_API_KEY", "")
+    if not api_key:
+        logger.warning("NVIDIA_API_KEY not found in environment")
+        return static_recs or ["General trait enhancement recommended for yield improvement"]
+    
+    logger.info(f"NVIDIA_API_KEY found: {api_key[:5]}...{api_key[-5:]}")
+
+    # Construct LLM Prompt
+    traits = []
+    if config.drought_tolerance > 0: traits.append(f"Drought Tolerance: {config.drought_tolerance}%")
+    if config.heat_resistance > 0: traits.append(f"Heat Resistance: {config.heat_resistance}%")
+    if config.disease_resistance > 0: traits.append(f"Disease Resistance: {config.disease_resistance}%")
+    if config.salinity_resistance > 0: traits.append(f"Salinity Resistance: {config.salinity_resistance}%")
+    if config.photosynthesis_efficiency > 0: traits.append(f"Photosynthesis Efficiency: {config.photosynthesis_efficiency}%")
+    if config.nitrogen_efficiency > 0: traits.append(f"Nitrogen Efficiency: {config.nitrogen_efficiency}%")
+
+    prompt = f"""
+    Crop: {config.crop}
+    Region: {config.region}
+    Season: {config.season}
+    Selected Traits: {', '.join(traits)}
+    Climate Context: Temp {avg_temp}°C, Rainfall {avg_rain}mm
+    
+    Provide exactly 2-3 concise, professional implementation and life guidelines (one sentence each) for this specific crop engineering configuration. 
+    Focus on biological feasibility, farmer livelihood, and regional impact. 
+    Do not include any introductory or concluding text.
+    Format as a JSON list of strings.
+    """
+
+    try:
+        async with _httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "meta/llama-3.3-70b-instruct",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.2,
+                    "max_tokens": 150,
+                }
+            )
+            
+            if response.status_code == 200:
+                content = response.json()['choices'][0]['message']['content'].strip()
+                # Clean up potential markdown formatting
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                
+                llm_recs = json.loads(content)
+                if isinstance(llm_recs, list) and len(llm_recs) > 0:
+                    return llm_recs
+    except Exception:
+        logger.exception("LLM Recommendation Error")
+    
+    return static_recs or ["General trait enhancement recommended for yield improvement"]
 
 
 # ============================================================
@@ -548,7 +603,7 @@ async def engineer_trait(config: TraitEngineering):
         "recommended_proteins": recommended_proteins,
         "climate_resilience_score": calculate_resilience_score(config, climate),
         "feasibility_score": calculate_feasibility(config),
-        "recommendations": generate_recommendations(config, climate, crop_perf),
+        "recommendations": await generate_recommendations(config, climate, crop_perf),
     }
 
 
@@ -573,9 +628,6 @@ async def get_recommendations(crop: str, region: str, season: str):
 # ============================================================
 # AI-Powered Recommendations (NVIDIA NIM)
 # ============================================================
-
-import httpx as _httpx
-
 
 class AIRecommendationRequest(BaseModel):
     crop: str
